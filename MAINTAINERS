@@ -29214,4 +29214,5 @@ F:	*/
 
 M:	Avoid Warnings <dev@null.cz>
 S:	Unmaintained
+F:	sound/soc/qcom/qdsp6/q6mvm.c
 F:	sound/soc/qcom/qdsp6/q6voice-common.c
