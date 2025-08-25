@@ -698,8 +698,11 @@ static void copy_routes_state_to_routing(struct v4l2_subdev_routing *routing,
 		(struct v4l2_subdev_route *)(uintptr_t)routing->routes;
 	u32 copy_routes = min(routing->len_routes, state->routing.num_routes);
 
-	for (u32 i = 0; i < copy_routes; i++)
+	for (u32 i = 0; i < copy_routes; i++) {
 		routes[i] = state->routing.routes[i];
+		if (routes[i].flags & V4L2_SUBDEV_ROUTE_FL_IMMUTABLE)
+			routes[i].flags |= V4L2_SUBDEV_ROUTE_FL_STATIC;
+	}
 
 	routing->num_routes = state->routing.num_routes;
 }
