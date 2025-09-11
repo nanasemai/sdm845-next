@@ -1,0 +1,78 @@
+# SPDX-License-Identifier: GPL-2.0
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/display/panel/lg,sw49410-lh609qh1.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: LG LH609QH1 MIPI-DSI panel with SW49410 controller
+
+maintainers:
+  - Paul Sajna <sajattack@postmarketos.org>
+
+description:
+  LG LH609QH1 6.1" 1440x3120 MIPI DSI panel with SW49410 controller found in LG G7 ThinQ smartphone.
+
+allOf:
+  - $ref: panel-common.yaml#
+
+properties:
+  compatible:
+    items:
+      - const: lg,sw49410
+
+  reg:
+    maxItems: 1
+
+  backlight:
+    description: Backlight device reference
+
+  reset-gpios:
+    description: Reset pin reference
+
+  vsp-supply:
+    description: Positive voltage supply
+
+  vsn-supply:
+    description: Negative voltage supply
+
+required:
+  - compatible
+  - reg
+  - reset-gpios
+  - port
+  - vsp-supply
+  - vsn-supply
+
+unevaluatedProperties: false
+
+examples:
+  - |
+    #include <dt-bindings/gpio/gpio.h>
+
+    dsi {
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        panel@0 {
+            reg = <0>;
+            compatible = "lg,sw49410-lh609qh1";
+
+            backlight = <&pmi8998_wled>;
+            reset-gpios = <&tlmm 6 GPIO_ACTIVE_LOW>;
+            width-mm = <65>;
+            height-mm = <140>;
+
+            vsp-supply = <&lab>;
+            vsn-supply = <&ibb>;
+
+            pinctrl-0 = <&sde_dsi_active &sde_te_active_sleep>;
+            pinctrl-1 = <&sde_dsi_sleep &sde_te_active_sleep>;
+            pinctrl-names = "default", "sleep";
+
+            port {
+              panel_in: endpoint {
+                remote-endpoint = <&mdss_dsi0_out>;
+              };
+            };
+        };
+    };
