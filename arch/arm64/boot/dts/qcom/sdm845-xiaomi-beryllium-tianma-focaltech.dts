@@ -1,0 +1,24 @@
+// SPDX-License-Identifier: GPL-2.0-only
+/*
+ * Not an official device; aftermarket combination of
+ * Novatek display and Focaltech touchscreen.
+ */
+
+/dts-v1/;
+
+#include "sdm845-xiaomi-beryllium-common.dtsi"
+
+/ {
+	model = "Xiaomi Pocophone F1 (Tianma-Focaltech)";
+	compatible = "xiaomi,beryllium-tianma-focaltech", "xiaomi,beryllium", "qcom,sdm845";
+};
+
+&display_panel {
+	compatible = "tianma,fhd-video", "novatek,nt36672a";
+
+	status = "okay";
+};
+
+&ts_focaltech {
+	status = "okay";
+};
