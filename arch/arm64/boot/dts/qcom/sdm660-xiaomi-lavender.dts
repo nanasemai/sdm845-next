@@ -118,6 +118,14 @@
 	status = "okay";
 };
 
+&pm660l_wled {
+	qcom,switching-freq = <800>;
+	qcom,current-limit-microamp = <20000>;
+	qcom,num-strings = <2>;
+
+	status = "okay";
+};
+
 &pon_pwrkey {
 	status = "okay";
 };
@@ -387,14 +395,6 @@
 			regulator-allow-set-load;
 		};
 	};
-};
-
-&pm660l_wled {
-	status = "okay";
-
-	qcom,switching-freq = <800>;
-	qcom,current-limit-microamp = <20000>;
-	qcom,num-strings = <2>;
 };
 
 &sdc2_state_on {
