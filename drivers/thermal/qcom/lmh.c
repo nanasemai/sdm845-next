@@ -4,7 +4,7 @@
  * Copyright (C) 2021, Linaro Limited. All rights reserved.
  */
 #include <linux/module.h>
-#include <linux/interrupt.h>
+#include <linux/interrupt.h> 
 #include <linux/irq.h>
 #include <linux/irqdesc.h>
 #include <linux/irqdomain.h>
@@ -36,7 +36,7 @@ struct lmh_hw_data {
 	void __iomem *base;
 	struct irq_domain *domain;
 	int irq;
-};
+}; 
 
 static irqreturn_t lmh_handle_irq(int hw_irq, void *data)
 {
