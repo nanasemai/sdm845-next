@@ -234,6 +234,18 @@ static int check_state(struct v4l2_subdev *sd, struct v4l2_subdev_state *state,
 	return 0;
 }
 
+static inline int check_caps(struct v4l2_subdev *sd,
+			     struct v4l2_subdev_state *state,
+			     const struct v4l2_subdev_client_info *ci,
+			     u32 pad)
+{
+	if (sd->entity.pads[pad].flags & MEDIA_PAD_FL_INTERNAL)
+		return ci->client_caps & V4L2_SUBDEV_CLIENT_CAP_STREAMS ?
+			0 : -EINVAL;
+
+	return 0;
+}
+
 static inline int check_format(struct v4l2_subdev *sd,
 			       struct v4l2_subdev_state *state,
 			       struct v4l2_subdev_format *format)
@@ -245,12 +257,21 @@ static inline int check_format(struct v4l2_subdev *sd,
 	       check_state(sd, state, format->which, format->pad, format->stream);
 }
 
+static inline int check_format_caps(struct v4l2_subdev *sd,
+				    const struct v4l2_subdev_client_info *ci,
+				    struct v4l2_subdev_state *state,
+				    struct v4l2_subdev_format *format)
+{
+	return check_format(sd, state, format) ?:
+		check_caps(sd, state, ci, format->pad);
+}
+
 static int call_get_fmt(struct v4l2_subdev *sd,
 			const struct v4l2_subdev_client_info *ci,
 			struct v4l2_subdev_state *state,
 			struct v4l2_subdev_format *format)
 {
-	return check_format(sd, state, format) ? :
+	return check_format_caps(sd, ci, state, format) ? :
 		sd->ops->pad->get_fmt(sd, ci, state, format);
 }
 
@@ -259,7 +280,7 @@ static int call_set_fmt(struct v4l2_subdev *sd,
 			struct v4l2_subdev_state *state,
 			struct v4l2_subdev_format *format)
 {
-	return check_format(sd, state, format) ? :
+	return check_format_caps(sd, ci, state, format) ? :
 		sd->ops->pad->set_fmt(sd, ci, state, format);
 }
 
@@ -310,12 +331,24 @@ static inline int check_selection(struct v4l2_subdev *sd,
 	       check_state(sd, state, sel->which, sel->pad, sel->stream);
 }
 
+static inline int check_selection_caps(struct v4l2_subdev *sd,
+				       const struct v4l2_subdev_client_info *ci,
+				       struct v4l2_subdev_state *state,
+				       struct v4l2_subdev_selection *sel)
+{
+	if (!sel)
+		return -EINVAL;
+
+	return check_selection(sd, state, sel) ? :
+		check_caps(sd, state, ci, sel->pad);
+}
+
 static int call_get_selection(struct v4l2_subdev *sd,
 			      const struct v4l2_subdev_client_info *ci,
 			      struct v4l2_subdev_state *state,
 			      struct v4l2_subdev_selection *sel)
 {
-	return check_selection(sd, state, sel) ? :
+	return check_selection_caps(sd, ci, state, sel) ? :
 		sd->ops->pad->get_selection(sd, ci, state, sel);
 }
 
@@ -324,7 +357,7 @@ static int call_set_selection(struct v4l2_subdev *sd,
 			      struct v4l2_subdev_state *state,
 			      struct v4l2_subdev_selection *sel)
 {
-	return check_selection(sd, state, sel) ? :
+	return check_selection_caps(sd, ci, state, sel) ? :
 		sd->ops->pad->set_selection(sd, ci, state, sel);
 }
 
