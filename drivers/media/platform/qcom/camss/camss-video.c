@@ -96,7 +96,7 @@ static int video_get_subdev_format(struct camss_video *video,
 
 	fmt.pad = pad;
 
-	ret = v4l2_subdev_call(subdev, pad, get_fmt, NULL, &fmt);
+	ret = v4l2_subdev_call(subdev, pad, get_fmt, NULL, NULL, &fmt);
 	if (ret)
 		return ret;
 

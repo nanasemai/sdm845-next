@@ -162,6 +162,7 @@ vsp1_entity_get_state(struct vsp1_entity *entity,
  * a direct drop-in for the operation handler.
  */
 int vsp1_subdev_get_pad_format(struct v4l2_subdev *subdev,
+			       const struct v4l2_subdev_client_info *ci,
 			       struct v4l2_subdev_state *sd_state,
 			       struct v4l2_subdev_format *fmt)
 {
@@ -387,7 +388,8 @@ static int vsp1_entity_init_state(struct v4l2_subdev *subdev,
 			       : V4L2_SUBDEV_FORMAT_ACTIVE,
 		};
 
-		v4l2_subdev_call(subdev, pad, set_fmt, sd_state, &format);
+		v4l2_subdev_call(subdev, pad, set_fmt, NULL, sd_state,
+				 &format);
 	}
 
 	return 0;

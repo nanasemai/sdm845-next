@@ -441,7 +441,7 @@ int imx_media_init_state(struct v4l2_subdev *sd,
 			.which = V4L2_SUBDEV_FORMAT_ACTIVE,
 		};
 
-		ret = v4l2_subdev_call(sd, pad, get_fmt, NULL, &format);
+		ret = v4l2_subdev_call(sd, pad, get_fmt, NULL, NULL, &format);
 		if (ret)
 			continue;
 

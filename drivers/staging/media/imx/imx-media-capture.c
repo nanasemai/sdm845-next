@@ -359,7 +359,8 @@ static int capture_legacy_enum_fmt_vid_cap(struct file *file, void *fh,
 	u32 fourcc;
 	int ret;
 
-	ret = v4l2_subdev_call(priv->src_sd, pad, get_fmt, NULL, &fmt_src);
+	ret = v4l2_subdev_call(priv->src_sd, pad, get_fmt, NULL, NULL,
+			       &fmt_src);
 	if (ret) {
 		dev_err(priv->dev, "failed to get src_sd format\n");
 		return ret;
@@ -432,7 +433,8 @@ static int capture_legacy_try_fmt_vid_cap(struct file *file, void *fh,
 	};
 	int ret;
 
-	ret = v4l2_subdev_call(priv->src_sd, pad, get_fmt, NULL, &fmt_src);
+	ret = v4l2_subdev_call(priv->src_sd, pad, get_fmt, NULL, NULL,
+			       &fmt_src);
 	if (ret)
 		return ret;
 
@@ -458,7 +460,8 @@ static int capture_legacy_s_fmt_vid_cap(struct file *file, void *fh,
 		return -EBUSY;
 	}
 
-	ret = v4l2_subdev_call(priv->src_sd, pad, get_fmt, NULL, &fmt_src);
+	ret = v4l2_subdev_call(priv->src_sd, pad, get_fmt, NULL, NULL,
+			       &fmt_src);
 	if (ret)
 		return ret;
 
@@ -683,7 +686,8 @@ static int capture_validate_fmt(struct capture_priv *priv)
 	int ret;
 
 	/* Retrieve the media bus format on the source subdev. */
-	ret = v4l2_subdev_call(priv->src_sd, pad, get_fmt, NULL, &fmt_src);
+	ret = v4l2_subdev_call(priv->src_sd, pad, get_fmt, NULL, NULL,
+			       &fmt_src);
 	if (ret)
 		return ret;
 
@@ -880,7 +884,7 @@ static int capture_init_format(struct capture_priv *priv)
 	int ret;
 
 	if (priv->legacy_api) {
-		ret = v4l2_subdev_call(priv->src_sd, pad, get_fmt, NULL,
+		ret = v4l2_subdev_call(priv->src_sd, pad, get_fmt, NULL, NULL,
 				       &fmt_src);
 		if (ret) {
 			dev_err(priv->dev, "failed to get source format\n");

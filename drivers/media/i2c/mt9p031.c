@@ -574,6 +574,7 @@ __mt9p031_get_pad_crop(struct mt9p031 *mt9p031,
 }
 
 static int mt9p031_get_format(struct v4l2_subdev *subdev,
+			      const struct v4l2_subdev_client_info *ci,
 			      struct v4l2_subdev_state *sd_state,
 			      struct v4l2_subdev_format *fmt)
 {
@@ -585,6 +586,7 @@ static int mt9p031_get_format(struct v4l2_subdev *subdev,
 }
 
 static int mt9p031_set_format(struct v4l2_subdev *subdev,
+			      const struct v4l2_subdev_client_info *ci,
 			      struct v4l2_subdev_state *sd_state,
 			      struct v4l2_subdev_format *format)
 {
@@ -623,6 +625,7 @@ static int mt9p031_set_format(struct v4l2_subdev *subdev,
 }
 
 static int mt9p031_get_selection(struct v4l2_subdev *subdev,
+				 const struct v4l2_subdev_client_info *ci,
 				 struct v4l2_subdev_state *sd_state,
 				 struct v4l2_subdev_selection *sel)
 {
@@ -647,6 +650,7 @@ static int mt9p031_get_selection(struct v4l2_subdev *subdev,
 }
 
 static int mt9p031_set_selection(struct v4l2_subdev *subdev,
+				 const struct v4l2_subdev_client_info *ci,
 				 struct v4l2_subdev_state *sd_state,
 				 struct v4l2_subdev_selection *sel)
 {

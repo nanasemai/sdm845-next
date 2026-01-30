@@ -312,6 +312,7 @@ dw_mipi_csi2rx_enum_mbus_code(struct v4l2_subdev *sd,
 }
 
 static int dw_mipi_csi2rx_set_fmt(struct v4l2_subdev *sd,
+				  const struct v4l2_subdev_client_info *ci,
 				  struct v4l2_subdev_state *state,
 				  struct v4l2_subdev_format *format)
 {
@@ -321,7 +322,7 @@ static int dw_mipi_csi2rx_set_fmt(struct v4l2_subdev *sd,
 
 	/* the format on the source pad always matches the sink pad */
 	if (format->pad == DW_MIPI_CSI2RX_PAD_SRC)
-		return v4l2_subdev_get_fmt(sd, state, format);
+		return v4l2_subdev_get_fmt(sd, NULL, state, format);
 
 	sink = v4l2_subdev_state_get_format(state, format->pad, format->stream);
 	if (!sink)

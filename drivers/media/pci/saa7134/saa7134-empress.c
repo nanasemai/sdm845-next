@@ -103,7 +103,7 @@ static int empress_g_fmt_vid_cap(struct file *file, void *priv,
 	};
 	struct v4l2_mbus_framefmt *mbus_fmt = &fmt.format;
 
-	saa_call_all(dev, pad, get_fmt, NULL, &fmt);
+	saa_call_all(dev, pad, get_fmt, NULL, NULL, &fmt);
 
 	v4l2_fill_pix_format(&f->fmt.pix, mbus_fmt);
 	f->fmt.pix.pixelformat  = V4L2_PIX_FMT_MPEG;
@@ -122,7 +122,7 @@ static int empress_s_fmt_vid_cap(struct file *file, void *priv,
 	};
 
 	v4l2_fill_mbus_format(&format.format, &f->fmt.pix, MEDIA_BUS_FMT_FIXED);
-	saa_call_all(dev, pad, set_fmt, NULL, &format);
+	saa_call_all(dev, pad, set_fmt, NULL, NULL, &format);
 	v4l2_fill_pix_format(&f->fmt.pix, &format.format);
 
 	f->fmt.pix.pixelformat  = V4L2_PIX_FMT_MPEG;
@@ -145,7 +145,7 @@ static int empress_try_fmt_vid_cap(struct file *file, void *priv,
 	};
 
 	v4l2_fill_mbus_format(&format.format, &f->fmt.pix, MEDIA_BUS_FMT_FIXED);
-	saa_call_all(dev, pad, set_fmt, &pad_state, &format);
+	saa_call_all(dev, pad, set_fmt, NULL, &pad_state, &format);
 	v4l2_fill_pix_format(&f->fmt.pix, &format.format);
 
 	f->fmt.pix.pixelformat  = V4L2_PIX_FMT_MPEG;

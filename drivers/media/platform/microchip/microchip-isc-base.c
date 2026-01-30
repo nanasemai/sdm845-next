@@ -916,6 +916,7 @@ static int isc_link_validate(struct media_link *link)
 
 	/* Get current format from subdev */
 	ret = v4l2_subdev_call(isc->current_subdev->sd, pad, get_fmt, NULL,
+			       NULL,
 			       &format);
 	if (ret)
 		return ret;

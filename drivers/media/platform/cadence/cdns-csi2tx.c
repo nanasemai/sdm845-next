@@ -170,6 +170,7 @@ static int csi2tx_enum_mbus_code(struct v4l2_subdev *subdev,
 
 static struct v4l2_mbus_framefmt *
 __csi2tx_get_pad_format(struct v4l2_subdev *subdev,
+			const struct v4l2_subdev_client_info *ci,
 			struct v4l2_subdev_state *sd_state,
 			struct v4l2_subdev_format *fmt)
 {
@@ -182,6 +183,7 @@ __csi2tx_get_pad_format(struct v4l2_subdev *subdev,
 }
 
 static int csi2tx_get_pad_format(struct v4l2_subdev *subdev,
+				 const struct v4l2_subdev_client_info *ci,
 				 struct v4l2_subdev_state *sd_state,
 				 struct v4l2_subdev_format *fmt)
 {
@@ -191,7 +193,7 @@ static int csi2tx_get_pad_format(struct v4l2_subdev *subdev,
 	if (fmt->pad == CSI2TX_PAD_SOURCE)
 		return -EINVAL;
 
-	format = __csi2tx_get_pad_format(subdev, sd_state, fmt);
+	format = __csi2tx_get_pad_format(subdev, NULL, sd_state, fmt);
 	if (!format)
 		return -EINVAL;
 
@@ -201,6 +203,7 @@ static int csi2tx_get_pad_format(struct v4l2_subdev *subdev,
 }
 
 static int csi2tx_set_pad_format(struct v4l2_subdev *subdev,
+				 const struct v4l2_subdev_client_info *ci,
 				 struct v4l2_subdev_state *sd_state,
 				 struct v4l2_subdev_format *fmt)
 {
@@ -214,7 +217,7 @@ static int csi2tx_set_pad_format(struct v4l2_subdev *subdev,
 	if (!csi2tx_get_fmt_from_mbus(fmt->format.code))
 		src_format = &fmt_default;
 
-	dst_format = __csi2tx_get_pad_format(subdev, sd_state, fmt);
+	dst_format = __csi2tx_get_pad_format(subdev, NULL, sd_state, fmt);
 	if (!dst_format)
 		return -EINVAL;
 

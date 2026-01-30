@@ -679,6 +679,7 @@ static int xcsi2rxss_init_state(struct v4l2_subdev *sd,
 }
 
 static int xcsi2rxss_get_format(struct v4l2_subdev *sd,
+				const struct v4l2_subdev_client_info *ci,
 				struct v4l2_subdev_state *sd_state,
 				struct v4l2_subdev_format *fmt)
 {
@@ -694,6 +695,7 @@ static int xcsi2rxss_get_format(struct v4l2_subdev *sd,
 }
 
 static int xcsi2rxss_set_format(struct v4l2_subdev *sd,
+				const struct v4l2_subdev_client_info *ci,
 				struct v4l2_subdev_state *sd_state,
 				struct v4l2_subdev_format *fmt)
 {

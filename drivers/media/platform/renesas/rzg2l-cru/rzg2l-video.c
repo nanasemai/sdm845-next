@@ -1121,7 +1121,7 @@ static int rzg2l_cru_video_link_validate(struct media_link *link)
 
 	subdev = media_entity_to_v4l2_subdev(link->source->entity);
 	fmt.pad = link->source->index;
-	ret = v4l2_subdev_call(subdev, pad, get_fmt, NULL, &fmt);
+	ret = v4l2_subdev_call(subdev, pad, get_fmt, NULL, NULL, &fmt);
 	if (ret < 0)
 		return ret == -ENOIOCTLCMD ? -EINVAL : ret;
 

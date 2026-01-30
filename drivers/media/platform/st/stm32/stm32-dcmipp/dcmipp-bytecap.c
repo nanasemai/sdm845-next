@@ -822,7 +822,8 @@ static int dcmipp_bytecap_link_validate(struct media_link *link)
 	};
 	int ret, i;
 
-	ret = v4l2_subdev_call(source_sd, pad, get_fmt, NULL, &source_fmt);
+	ret = v4l2_subdev_call(source_sd, pad, get_fmt, NULL, NULL,
+			       &source_fmt);
 	if (ret < 0)
 		return 0;
 

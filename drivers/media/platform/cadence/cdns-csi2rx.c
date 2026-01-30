@@ -276,7 +276,7 @@ static int csi2rx_configure_ext_dphy(struct csi2rx_priv *csi2rx)
 	s64 link_freq;
 	int ret;
 
-	ret = v4l2_subdev_call_state_active(&csi2rx->subdev, pad, get_fmt,
+	ret = v4l2_subdev_call_ci_state_active(&csi2rx->subdev, pad, get_fmt,
 					    &sd_fmt);
 	if (ret < 0)
 		return ret;
@@ -532,6 +532,7 @@ static int csi2rx_enum_mbus_code(struct v4l2_subdev *subdev,
 }
 
 static int csi2rx_set_fmt(struct v4l2_subdev *subdev,
+			  const struct v4l2_subdev_client_info *ci,
 			  struct v4l2_subdev_state *state,
 			  struct v4l2_subdev_format *format)
 {
@@ -540,7 +541,7 @@ static int csi2rx_set_fmt(struct v4l2_subdev *subdev,
 
 	/* No transcoding, source and sink formats must match. */
 	if (format->pad != CSI2RX_PAD_SINK)
-		return v4l2_subdev_get_fmt(subdev, state, format);
+		return v4l2_subdev_get_fmt(subdev, NULL, state, format);
 
 	if (!csi2rx_get_fmt_by_code(format->format.code))
 		format->format.code = formats[0].code;
@@ -577,7 +578,7 @@ static int csi2rx_init_state(struct v4l2_subdev *subdev,
 		},
 	};
 
-	return csi2rx_set_fmt(subdev, state, &format);
+	return csi2rx_set_fmt(subdev, NULL, state, &format);
 }
 
 int cdns_csi2rx_negotiate_ppc(struct v4l2_subdev *subdev, unsigned int pad,

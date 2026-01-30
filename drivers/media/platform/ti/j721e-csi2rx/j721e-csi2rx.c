@@ -953,7 +953,7 @@ static int ti_csi2rx_link_validate(struct media_link *link)
 	const struct ti_csi2rx_fmt *ti_fmt;
 	int ret;
 
-	ret = v4l2_subdev_call_state_active(csi->source, pad,
+	ret = v4l2_subdev_call_ci_state_active(csi->source, pad,
 					    get_fmt, &source_fmt);
 	if (ret)
 		return ret;

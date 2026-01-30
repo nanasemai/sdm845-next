@@ -222,13 +222,13 @@ static int camif_register_sensor(struct camif_dev *camif)
 
 	/* Get initial pixel format and set it at the camif sink pad */
 	format.pad = 0;
-	ret = v4l2_subdev_call(sd, pad, get_fmt, NULL, &format);
+	ret = v4l2_subdev_call(sd, pad, get_fmt, NULL, NULL, &format);
 
 	if (ret < 0)
 		return 0;
 
 	format.pad = CAMIF_SD_PAD_SINK;
-	v4l2_subdev_call(&camif->subdev, pad, set_fmt, NULL, &format);
+	v4l2_subdev_call(&camif->subdev, pad, set_fmt, NULL, NULL, &format);
 
 	v4l2_info(sd, "Initial format from sensor: %dx%d, %#x\n",
 		  format.format.width, format.format.height,

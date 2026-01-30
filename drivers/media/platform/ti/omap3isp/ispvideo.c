@@ -286,7 +286,7 @@ __isp_video_get_format(struct isp_video *video, struct v4l2_format *format)
 	fmt.pad = pad;
 
 	mutex_lock(&video->mutex);
-	ret = v4l2_subdev_call(subdev, pad, get_fmt, NULL, &fmt);
+	ret = v4l2_subdev_call(subdev, pad, get_fmt, NULL, NULL, &fmt);
 	mutex_unlock(&video->mutex);
 
 	if (ret)
@@ -774,7 +774,7 @@ isp_video_try_format(struct file *file, void *fh, struct v4l2_format *format)
 	isp_video_pix_to_mbus(&format->fmt.pix, &fmt.format);
 
 	fmt.pad = pad;
-	ret = v4l2_subdev_call(subdev, pad, get_fmt, NULL, &fmt);
+	ret = v4l2_subdev_call(subdev, pad, get_fmt, NULL, NULL, &fmt);
 	if (ret)
 		return ret == -ENOIOCTLCMD ? -ENOTTY : ret;
 
@@ -839,14 +839,14 @@ isp_video_get_selection(struct file *file, void *fh, struct v4l2_selection *sel)
 	 * implemented.
 	 */
 	sdsel.pad = pad;
-	ret = v4l2_subdev_call(subdev, pad, get_selection, NULL, &sdsel);
+	ret = v4l2_subdev_call(subdev, pad, get_selection, NULL, NULL, &sdsel);
 	if (!ret)
 		sel->r = sdsel.r;
 	if (ret != -ENOIOCTLCMD)
 		return ret;
 
 	format.pad = pad;
-	ret = v4l2_subdev_call(subdev, pad, get_fmt, NULL, &format);
+	ret = v4l2_subdev_call(subdev, pad, get_fmt, NULL, NULL, &format);
 	if (ret < 0)
 		return ret == -ENOIOCTLCMD ? -ENOTTY : ret;
 
@@ -890,7 +890,7 @@ isp_video_set_selection(struct file *file, void *fh, struct v4l2_selection *sel)
 
 	sdsel.pad = pad;
 	mutex_lock(&video->mutex);
-	ret = v4l2_subdev_call(subdev, pad, set_selection, NULL, &sdsel);
+	ret = v4l2_subdev_call(subdev, pad, set_selection, NULL, NULL, &sdsel);
 	mutex_unlock(&video->mutex);
 	if (!ret)
 		sel->r = sdsel.r;
@@ -1073,7 +1073,7 @@ static int isp_video_check_external_subdevs(struct isp_video *video,
 
 	fmt.pad = source_pad->index;
 	ret = v4l2_subdev_call(media_entity_to_v4l2_subdev(sink),
-			       pad, get_fmt, NULL, &fmt);
+			       pad, get_fmt, NULL, NULL, &fmt);
 	if (unlikely(ret < 0)) {
 		dev_warn(isp->dev, "get_fmt returned null!\n");
 		return ret;

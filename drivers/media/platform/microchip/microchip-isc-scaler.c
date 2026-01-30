@@ -26,6 +26,7 @@ static void isc_scaler_prepare_fmt(struct v4l2_mbus_framefmt *framefmt)
 };
 
 static int isc_scaler_get_fmt(struct v4l2_subdev *sd,
+			      const struct v4l2_subdev_client_info *ci,
 			      struct v4l2_subdev_state *sd_state,
 			      struct v4l2_subdev_format *format)
 {
@@ -46,6 +47,7 @@ static int isc_scaler_get_fmt(struct v4l2_subdev *sd,
 }
 
 static int isc_scaler_set_fmt(struct v4l2_subdev *sd,
+			      const struct v4l2_subdev_client_info *ci,
 			      struct v4l2_subdev_state *sd_state,
 			      struct v4l2_subdev_format *req_fmt)
 {
@@ -124,6 +126,7 @@ static int isc_scaler_enum_mbus_code(struct v4l2_subdev *sd,
 }
 
 static int isc_scaler_g_sel(struct v4l2_subdev *sd,
+			    const struct v4l2_subdev_client_info *ci,
 			    struct v4l2_subdev_state *sd_state,
 			    struct v4l2_subdev_selection *sel)
 {

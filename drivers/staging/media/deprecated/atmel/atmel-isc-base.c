@@ -959,7 +959,7 @@ static int isc_try_fmt(struct isc_device *isc, struct v4l2_format *f,
 	isc_try_fse(isc, &pad_state);
 
 	v4l2_fill_mbus_format(&format.format, pixfmt, mbus_code);
-	ret = v4l2_subdev_call(isc->current_subdev->sd, pad, set_fmt,
+	ret = v4l2_subdev_call(isc->current_subdev->sd, pad, set_fmt, NULL,
 			       &pad_state, &format);
 	if (ret < 0)
 		goto isc_try_fmt_subdev_err;
@@ -1004,7 +1004,7 @@ static int isc_set_fmt(struct isc_device *isc, struct v4l2_format *f)
 
 	v4l2_fill_mbus_format(&format.format, &f->fmt.pix, mbus_code);
 	ret = v4l2_subdev_call(isc->current_subdev->sd, pad,
-			       set_fmt, NULL, &format);
+			       set_fmt, NULL, NULL, &format);
 	if (ret < 0)
 		return ret;
 

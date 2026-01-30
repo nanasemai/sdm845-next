@@ -1229,6 +1229,7 @@ static int cio2_subdev_init_state(struct v4l2_subdev *sd,
 }
 
 static int cio2_subdev_set_fmt(struct v4l2_subdev *sd,
+			       const struct v4l2_subdev_client_info *ci,
 			       struct v4l2_subdev_state *sd_state,
 			       struct v4l2_subdev_format *fmt)
 {
@@ -1241,7 +1242,7 @@ static int cio2_subdev_set_fmt(struct v4l2_subdev *sd,
 	 * source always propagates from sink
 	 */
 	if (fmt->pad == CIO2_PAD_SOURCE)
-		return v4l2_subdev_get_fmt(sd, sd_state, fmt);
+		return v4l2_subdev_get_fmt(sd, NULL, sd_state, fmt);
 
 	fmt->format.code = formats[0].mbus_code;
 
@@ -1287,7 +1288,7 @@ static int cio2_subdev_link_validate_get_format(struct media_pad *pad,
 		memset(fmt, 0, sizeof(*fmt));
 		fmt->which = V4L2_SUBDEV_FORMAT_ACTIVE;
 		fmt->pad = pad->index;
-		return v4l2_subdev_call(sd, pad, get_fmt, NULL, fmt);
+		return v4l2_subdev_call(sd, pad, get_fmt, NULL, NULL, fmt);
 	}
 
 	return -EINVAL;

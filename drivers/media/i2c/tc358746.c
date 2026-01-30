@@ -873,6 +873,7 @@ static int tc358746_enum_mbus_code(struct v4l2_subdev *sd,
 }
 
 static int tc358746_set_fmt(struct v4l2_subdev *sd,
+			    const struct v4l2_subdev_client_info *ci,
 			    struct v4l2_subdev_state *sd_state,
 			    struct v4l2_subdev_format *format)
 {
@@ -881,7 +882,7 @@ static int tc358746_set_fmt(struct v4l2_subdev *sd,
 
 	/* Source follows the sink */
 	if (format->pad == TC358746_SOURCE)
-		return v4l2_subdev_get_fmt(sd, sd_state, format);
+		return v4l2_subdev_get_fmt(sd, NULL, sd_state, format);
 
 	sink_fmt = v4l2_subdev_state_get_format(sd_state, TC358746_SINK);
 
