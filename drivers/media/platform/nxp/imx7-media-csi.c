@@ -1412,7 +1412,7 @@ static int imx7_csi_video_validate_fmt(struct imx7_csi *csi)
 	int ret;
 
 	/* Retrieve the media bus format on the source subdev. */
-	ret = v4l2_subdev_call_state_active(&csi->sd, pad, get_fmt, &fmt_src);
+	ret = v4l2_subdev_call_ci_state_active(&csi->sd, pad, get_fmt, &fmt_src);
 	if (ret)
 		return ret;
 
@@ -1890,6 +1890,7 @@ static void imx7_csi_try_fmt(struct v4l2_subdev *sd,
 }
 
 static int imx7_csi_set_fmt(struct v4l2_subdev *sd,
+			    const struct v4l2_subdev_client_info *ci,
 			    struct v4l2_subdev_state *sd_state,
 			    struct v4l2_subdev_format *sdformat)
 {

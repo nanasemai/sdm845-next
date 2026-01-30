@@ -296,6 +296,7 @@ static void ov02a10_fill_fmt(const struct ov02a10_mode *mode,
 }
 
 static int ov02a10_set_fmt(struct v4l2_subdev *sd,
+			   const struct v4l2_subdev_client_info *ci,
 			   struct v4l2_subdev_state *sd_state,
 			   struct v4l2_subdev_format *fmt)
 {
@@ -328,6 +329,7 @@ out_unlock:
 }
 
 static int ov02a10_get_fmt(struct v4l2_subdev *sd,
+			   const struct v4l2_subdev_client_info *ci,
 			   struct v4l2_subdev_state *sd_state,
 			   struct v4l2_subdev_format *fmt)
 {
@@ -523,7 +525,7 @@ static int ov02a10_init_state(struct v4l2_subdev *sd,
 		}
 	};
 
-	ov02a10_set_fmt(sd, sd_state, &fmt);
+	ov02a10_set_fmt(sd, NULL, sd_state, &fmt);
 
 	return 0;
 }

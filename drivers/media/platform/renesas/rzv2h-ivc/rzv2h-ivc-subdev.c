@@ -157,6 +157,7 @@ static int rzv2h_ivc_enum_frame_size(struct v4l2_subdev *sd,
 }
 
 static int rzv2h_ivc_set_fmt(struct v4l2_subdev *sd,
+			     const struct v4l2_subdev_client_info *ci,
 			     struct v4l2_subdev_state *state,
 			     struct v4l2_subdev_format *format)
 {
@@ -164,7 +165,7 @@ static int rzv2h_ivc_set_fmt(struct v4l2_subdev *sd,
 	struct v4l2_mbus_framefmt *src_fmt, *sink_fmt;
 
 	if (format->pad == RZV2H_IVC_SUBDEV_SOURCE_PAD)
-		return v4l2_subdev_get_fmt(sd, state, format);
+		return v4l2_subdev_get_fmt(sd, NULL, state, format);
 
 	sink_fmt = v4l2_subdev_state_get_format(state,
 						RZV2H_IVC_SUBDEV_SINK_PAD);

@@ -1884,6 +1884,7 @@ static int rcsi2_disable_streams(struct v4l2_subdev *sd,
 }
 
 static int rcsi2_set_pad_format(struct v4l2_subdev *sd,
+				const struct v4l2_subdev_client_info *ci,
 				struct v4l2_subdev_state *state,
 				struct v4l2_subdev_format *format)
 {
@@ -1891,7 +1892,7 @@ static int rcsi2_set_pad_format(struct v4l2_subdev *sd,
 	unsigned int num_pads = rcsi2_num_pads(priv);
 
 	if (format->pad > RCAR_CSI2_SINK)
-		return v4l2_subdev_get_fmt(sd, state, format);
+		return v4l2_subdev_get_fmt(sd, NULL, state, format);
 
 	if (!rcsi2_code_to_fmt(format->format.code))
 		format->format.code = rcar_csi2_formats[0].code;

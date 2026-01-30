@@ -1829,6 +1829,7 @@ static int ov08x40_do_get_pad_format(struct ov08x40 *ov08x,
 }
 
 static int ov08x40_get_pad_format(struct v4l2_subdev *sd,
+				  const struct v4l2_subdev_client_info *ci,
 				  struct v4l2_subdev_state *sd_state,
 				  struct v4l2_subdev_format *fmt)
 {
@@ -1844,6 +1845,7 @@ static int ov08x40_get_pad_format(struct v4l2_subdev *sd,
 
 static int
 ov08x40_set_pad_format(struct v4l2_subdev *sd,
+		       const struct v4l2_subdev_client_info *ci,
 		       struct v4l2_subdev_state *sd_state,
 		       struct v4l2_subdev_format *fmt)
 {

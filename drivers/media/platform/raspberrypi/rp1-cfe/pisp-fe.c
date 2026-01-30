@@ -429,6 +429,7 @@ static int pisp_fe_init_state(struct v4l2_subdev *sd,
 }
 
 static int pisp_fe_pad_set_fmt(struct v4l2_subdev *sd,
+			       const struct v4l2_subdev_client_info *ci,
 			       struct v4l2_subdev_state *state,
 			       struct v4l2_subdev_format *format)
 {
@@ -501,7 +502,7 @@ static int pisp_fe_pad_set_fmt(struct v4l2_subdev *sd,
 	case FE_CONFIG_PAD:
 	case FE_STATS_PAD:
 	default:
-		return v4l2_subdev_get_fmt(sd, state, format);
+		return v4l2_subdev_get_fmt(sd, NULL, state, format);
 	}
 }
 
