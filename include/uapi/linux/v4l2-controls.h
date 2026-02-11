@@ -1250,6 +1250,13 @@ enum v4l2_jpeg_chroma_subsampling {
 #define V4L2_CID_METADATA_LAYOUT		(V4L2_CID_IMAGE_SOURCE_CLASS_BASE + 12)
 
 #define V4L2_CID_BINNING_FACTORS		(V4L2_CID_IMAGE_SOURCE_CLASS_BASE + 13)
+#define V4L2_BINNING_FACTORS_MAKE(hnum, hdem, vnum, vdem)		\
+	(((uint64_t)(0xffff & hnum) << 48) | ((uint64_t)(0xffff & hdem) << 32) | \
+	 ((uint64_t)(0xffff & vnum) << 16) | (uint64_t)(0xffff & vdem))
+#define V4L2_BINNING_FACTORS_HNUM(binning)	((binning >> 48) & 0xffff)
+#define V4L2_BINNING_FACTORS_HDEM(binning)	((binning >> 32) & 0xffff)
+#define V4L2_BINNING_FACTORS_VNUM(binning)	((binning >> 16) & 0xffff)
+#define V4L2_BINNING_FACTORS_VDEM(binning)	(binning & 0xffff)
 #define V4L2_CID_SUBSAMPLING_HORIZONTAL		(V4L2_CID_IMAGE_SOURCE_CLASS_BASE + 14)
 #define V4L2_CID_SUBSAMPLING_VERTICAL		(V4L2_CID_IMAGE_SOURCE_CLASS_BASE + 15)
 
