@@ -95,6 +95,7 @@
 #define IMX219_REG_BINNING_MODE_V	CCI_REG8(0x0175)
 #define IMX219_BINNING_NONE		0x00
 #define IMX219_BINNING_X2		0x01
+#define IMX219_BINNING_X4		0x02
 #define IMX219_BINNING_X2_ANALOG	0x03
 
 #define IMX219_REG_CSI_DATA_FORMAT_A	CCI_REG16(0x018c)
@@ -473,6 +474,7 @@ imx219_get_embedded_format_code(const struct v4l2_mbus_framefmt *format)
 enum imx219_binning_factor_indices {
 	IMX219_BINNING_11,
 	IMX219_BINNING_22,
+	IMX219_BINNING_44,
 };
 
 static const struct {
@@ -481,11 +483,13 @@ static const struct {
 } imx219_binnings[] = {
 	[IMX219_BINNING_11] = { IMX219_BINNING_NONE, IMX219_BINNING_NONE, IMX219_LLP_MIN, },
 	[IMX219_BINNING_22] = { IMX219_BINNING_X2_ANALOG, IMX219_BINNING_X2_ANALOG, IMX219_BINNED_LLP_MIN, },
+	[IMX219_BINNING_44] = { IMX219_BINNING_X4, IMX219_BINNING_X4, IMX219_BINNED_LLP_MIN, },
 };
 
 static const s64 imx219_binning_factors[] = {
 	[IMX219_BINNING_11] = V4L2_BINNING_FACTORS_MAKE(1, 1, 1, 1),
 	[IMX219_BINNING_22] = V4L2_BINNING_FACTORS_MAKE(2, 1, 2, 1),
+	[IMX219_BINNING_44] = V4L2_BINNING_FACTORS_MAKE(4, 1, 4, 1),
 };
 
 static int imx219_apply_binning(struct imx219 *imx219,
