@@ -765,7 +765,6 @@ EXPORT_SYMBOL(v4l2_s_ext_ctrls);
 /* Helper function to get a single control */
 static int get_ctrl(struct v4l2_ctrl *ctrl, struct v4l2_ext_control *c)
 {
-	struct v4l2_ctrl *master = ctrl->cluster[0];
 	int ret = 0;
 	int i;
 
@@ -779,9 +778,10 @@ static int get_ctrl(struct v4l2_ctrl *ctrl, struct v4l2_ext_control *c)
 	if (ctrl->flags & V4L2_CTRL_FLAG_WRITE_ONLY)
 		return -EACCES;
 
-	v4l2_ctrl_lock(master);
 	/* g_volatile_ctrl will update the current control values */
 	if (ctrl->flags & V4L2_CTRL_FLAG_VOLATILE) {
+		struct v4l2_ctrl *master = ctrl->cluster[0];
+
 		for (i = 0; i < master->ncontrols; i++)
 			cur_to_new(master->cluster[i]);
 		ret = call_op(master, g_volatile_ctrl);
@@ -790,7 +790,6 @@ static int get_ctrl(struct v4l2_ctrl *ctrl, struct v4l2_ext_control *c)
 	} else {
 		ret = cur_to_user(c, ctrl);
 	}
-	v4l2_ctrl_unlock(master);
 	return ret;
 }
 
@@ -802,8 +801,12 @@ int v4l2_g_ctrl(struct v4l2_ctrl_handler *hdl, struct v4l2_control *control)
 
 	if (!ctrl || !ctrl->is_int)
 		return -EINVAL;
-	ret = get_ctrl(ctrl, &c);
 
+	struct v4l2_ctrl *master = ctrl->cluster[0];
+
+	v4l2_ctrl_lock(master);
+	ret = get_ctrl(ctrl, &c);
+	v4l2_ctrl_unlock(master);
 	if (!ret)
 		control->value = c.value;
 
@@ -880,9 +883,11 @@ EXPORT_SYMBOL(v4l2_s_ctrl);
  * Helper functions for drivers to get/set controls.
  */
 
-s32 v4l2_ctrl_g_ctrl(struct v4l2_ctrl *ctrl)
+s32 __v4l2_ctrl_g_ctrl(struct v4l2_ctrl *ctrl)
 {
 	struct v4l2_ext_control c;
+
+	lockdep_assert_held(ctrl->cluster[0]->handler->lock);
 
 	/* It's a driver bug if this happens. */
 	if (WARN_ON(!ctrl->is_int))
@@ -891,11 +896,26 @@ s32 v4l2_ctrl_g_ctrl(struct v4l2_ctrl *ctrl)
 	get_ctrl(ctrl, &c);
 	return c.value;
 }
+EXPORT_SYMBOL_GPL(__v4l2_ctrl_g_ctrl);
+
+s32 v4l2_ctrl_g_ctrl(struct v4l2_ctrl *ctrl)
+{
+	struct v4l2_ctrl *master = ctrl->cluster[0];
+	int ret;
+
+	v4l2_ctrl_lock(master);
+	ret = __v4l2_ctrl_g_ctrl(ctrl);
+	v4l2_ctrl_unlock(master);
+
+	return ret;
+}
 EXPORT_SYMBOL(v4l2_ctrl_g_ctrl);
 
-s64 v4l2_ctrl_g_ctrl_int64(struct v4l2_ctrl *ctrl)
+s64 __v4l2_ctrl_g_ctrl_int64(struct v4l2_ctrl *ctrl)
 {
 	struct v4l2_ext_control c;
+
+	lockdep_assert_held(ctrl->cluster[0]->handler->lock);
 
 	/* It's a driver bug if this happens. */
 	if (WARN_ON(ctrl->is_ptr || ctrl->type != V4L2_CTRL_TYPE_INTEGER64))
@@ -903,6 +923,19 @@ s64 v4l2_ctrl_g_ctrl_int64(struct v4l2_ctrl *ctrl)
 	c.value64 = 0;
 	get_ctrl(ctrl, &c);
 	return c.value64;
+}
+EXPORT_SYMBOL_GPL(__v4l2_ctrl_g_ctrl_int64);
+
+s64 v4l2_ctrl_g_ctrl_int64(struct v4l2_ctrl *ctrl)
+{
+	struct v4l2_ctrl *master = ctrl->cluster[0];
+	int ret;
+
+	v4l2_ctrl_lock(master);
+	ret = __v4l2_ctrl_g_ctrl_int64(ctrl);
+	v4l2_ctrl_unlock(master);
+
+	return ret;
 }
 EXPORT_SYMBOL(v4l2_ctrl_g_ctrl_int64);
 

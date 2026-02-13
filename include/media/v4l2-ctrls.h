@@ -1095,6 +1095,21 @@ const char * const *v4l2_ctrl_get_menu(u32 id);
 const s64 *v4l2_ctrl_get_int_menu(u32 id, u32 *len);
 
 /**
+ * __v4l2_ctrl_g_ctrl() - Helper function to get the control's value from
+ *	within a driver.
+ *
+ * @ctrl:	The control.
+ *
+ * This returns the control's value safely by going through the control
+ * framework. This function will not lock the control's handler.
+ *
+ * This function is for integer type controls only.
+ *
+ * Returns: the value of the control or 0 on error.
+ */
+s32 __v4l2_ctrl_g_ctrl(struct v4l2_ctrl *ctrl);
+
+/**
  * v4l2_ctrl_g_ctrl() - Helper function to get the control's value from
  *	within a driver.
  *
@@ -1146,6 +1161,21 @@ static inline int v4l2_ctrl_s_ctrl(struct v4l2_ctrl *ctrl, s32 val)
 
 	return rval;
 }
+
+/**
+ * __v4l2_ctrl_g_ctrl_int64() - Helper function to get a 64-bit control's value
+ *	from within a driver.
+ *
+ * @ctrl:	The control.
+ *
+ * This returns the control's value safely by going through the control
+ * framework. This function will not lock the control's handler.
+ *
+ * This function is for 64-bit integer type controls only.
+ *
+ * Returns: the value of the control or 0 on error.
+ */
+s64 __v4l2_ctrl_g_ctrl_int64(struct v4l2_ctrl *ctrl);
 
 /**
  * v4l2_ctrl_g_ctrl_int64() - Helper function to get a 64-bit control's value
