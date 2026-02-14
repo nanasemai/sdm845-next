@@ -19,7 +19,9 @@ allOf:
 
 properties:
   compatible:
-    const: st,stmfts
+    enum:
+      - st,stmfts
+      - st,stmfts5
 
   reg:
     maxItems: 1
@@ -52,6 +54,19 @@ required:
   - vdd-supply
 
 unevaluatedProperties: false
+
+allOf:
+  - if:
+      properties:
+        compatible:
+          const: st,stmfts5
+    then:
+      properties:
+        switch-gpio:
+          description: Switch between SLPI and AP mode.
+
+      required:
+        - switch-gpio
 
 examples:
   - |
