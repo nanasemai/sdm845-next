@@ -838,16 +838,15 @@ __must_check int __media_pipeline_start(struct media_pad *origin,
 			if (link->sink != pad && link->source != pad)
 				continue;
 
-			/* Record if the pad has links and enabled links. */
-			if (link->flags & MEDIA_LNK_FL_ENABLED)
-				has_enabled_link = true;
-
 			/*
-			 * Validate the link if it's enabled and has the
-			 * current pad as its sink.
+			 * Ensure the link is enabled and if so, record
+			 * it. Proceed to the next link if the current pad isn't
+			 * the sink pad of the link.
 			 */
 			if (!(link->flags & MEDIA_LNK_FL_ENABLED))
 				continue;
+
+			has_enabled_link = true;
 
 			if (link->sink != pad)
 				continue;
