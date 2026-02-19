@@ -1894,6 +1894,17 @@ v4l2_subdev_lock_and_get_active_state(struct v4l2_subdev *sd)
 }
 
 /**
+ * v4l2_subdev_state_is_active() - Tell if given state is active state
+ * @state: The sub-device state
+ *
+ * Returns true if a given sub-device state is active state, false otherwise.
+ */
+static inline bool v4l2_subdev_state_is_active(struct v4l2_subdev_state *state)
+{
+	return state->sd->active_state == state;
+}
+
+/**
  * v4l2_subdev_init - initializes the sub-device struct
  *
  * @sd: pointer to the &struct v4l2_subdev to be initialized
