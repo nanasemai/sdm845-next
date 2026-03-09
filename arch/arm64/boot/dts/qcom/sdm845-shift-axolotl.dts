@@ -419,6 +419,11 @@
 	status = "okay";
 };
 
+&dispcc {
+	/* broken display driver, keep framebuffer on */
+	status = "disabled";
+};
+
 &gcc {
 	protected-clocks = <GCC_QSPI_CORE_CLK>,
 			   <GCC_QSPI_CORE_CLK_SRC>,
@@ -486,7 +491,8 @@
 };
 
 &mdss {
-	status = "okay";
+	/* broken display driver, keep framebuffer on */
+	status = "disabled";
 };
 
 &mdss_dsi0 {
