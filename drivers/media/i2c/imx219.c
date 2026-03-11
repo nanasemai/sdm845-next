@@ -867,8 +867,6 @@ static int imx219_set_pad_format(struct v4l2_subdev *sd,
 	crop->top = (IMX219_NATIVE_HEIGHT - crop->height) / 2;
 
 	if (fmt->which == V4L2_SUBDEV_FORMAT_ACTIVE) {
-		int exposure_max;
-		int exposure_def;
 		int llp_min;
 		int pixel_rate;
 
@@ -884,18 +882,6 @@ static int imx219_set_pad_format(struct v4l2_subdev *sd,
 		ret = __v4l2_ctrl_s_ctrl(imx219->vblank,
 					 (int)(mode->fll_def / binning) -
 					 (int)mode->height);
-		if (ret)
-			return ret;
-
-		/* Update max exposure while meeting expected vblanking */
-		exposure_max = mode->fll_def - IMX219_EXPOSURE_OFFSET;
-		exposure_def = (exposure_max < IMX219_EXPOSURE_DEFAULT) ?
-				exposure_max : IMX219_EXPOSURE_DEFAULT;
-		ret = __v4l2_ctrl_modify_range(imx219->exposure,
-					       imx219->exposure->minimum,
-					       exposure_max,
-					       imx219->exposure->step,
-					       exposure_def);
 		if (ret)
 			return ret;
 
