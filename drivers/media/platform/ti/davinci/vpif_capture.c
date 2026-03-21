@@ -997,7 +997,7 @@ static int vpif_g_fmt_vid_cap(struct file *file, void *priv,
 	*fmt = common->fmt;
 
 	/* If subdev has get_fmt, use that to override */
-	ret = v4l2_subdev_call(ch->sd, pad, get_fmt, NULL, &format);
+	ret = v4l2_subdev_call(ch->sd, pad, get_fmt, NULL, NULL, &format);
 	if (!ret && mbus_fmt->code) {
 		v4l2_fill_pix_format(pix_fmt, mbus_fmt);
 		pix_fmt->bytesperline = pix_fmt->width;

@@ -99,6 +99,7 @@ u32 ipu7_isys_convert_bayer_order(u32 code, int x, int y)
 }
 
 int ipu7_isys_subdev_set_fmt(struct v4l2_subdev *sd,
+			     const struct v4l2_subdev_client_info *ci,
 			     struct v4l2_subdev_state *state,
 			     struct v4l2_subdev_format *format)
 {
@@ -113,7 +114,7 @@ int ipu7_isys_subdev_set_fmt(struct v4l2_subdev *sd,
 	/* No transcoding, source and sink formats must match. */
 	if ((sd->entity.pads[format->pad].flags & MEDIA_PAD_FL_SOURCE) &&
 	    sd->entity.num_pads > 1)
-		return v4l2_subdev_get_fmt(sd, state, format);
+		return v4l2_subdev_get_fmt(sd, NULL, state, format);
 
 	format->format.width = clamp(format->format.width, IPU_ISYS_MIN_WIDTH,
 				     IPU_ISYS_MAX_WIDTH);

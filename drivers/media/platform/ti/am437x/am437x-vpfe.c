@@ -1288,7 +1288,7 @@ static int __subdev_get_format(struct vpfe_device *vpfe,
 	struct v4l2_mbus_framefmt *mbus_fmt = &sd_fmt.format;
 	int ret;
 
-	ret = v4l2_subdev_call(sd, pad, get_fmt, NULL, &sd_fmt);
+	ret = v4l2_subdev_call(sd, pad, get_fmt, NULL, NULL, &sd_fmt);
 	if (ret)
 		return ret;
 
@@ -1314,7 +1314,7 @@ static int __subdev_set_format(struct vpfe_device *vpfe,
 
 	*mbus_fmt = *fmt;
 
-	ret = v4l2_subdev_call(sd, pad, set_fmt, NULL, &sd_fmt);
+	ret = v4l2_subdev_call(sd, pad, set_fmt, NULL, NULL, &sd_fmt);
 	if (ret)
 		return ret;
 

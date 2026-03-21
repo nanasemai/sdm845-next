@@ -291,7 +291,7 @@ static int mali_c55_link_validate(struct media_link *link)
 	};
 	int ret;
 
-	ret = v4l2_subdev_call(sd, pad, get_fmt, NULL, &sd_fmt);
+	ret = v4l2_subdev_call(sd, pad, get_fmt, NULL, NULL, &sd_fmt);
 	if (ret)
 		return ret;
 

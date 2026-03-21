@@ -463,7 +463,8 @@ static int isp_video_pipeline_validate(struct fimc_isp *isp)
 		if (!(pad->flags & MEDIA_PAD_FL_SINK))
 			break;
 		sink_fmt.pad = pad->index;
-		ret = v4l2_subdev_call(sd, pad, get_fmt, NULL, &sink_fmt);
+		ret = v4l2_subdev_call(sd, pad, get_fmt, NULL, NULL,
+				       &sink_fmt);
 		if (ret < 0 && ret != -ENOIOCTLCMD)
 			return -EPIPE;
 
@@ -474,7 +475,7 @@ static int isp_video_pipeline_validate(struct fimc_isp *isp)
 
 		sd = media_entity_to_v4l2_subdev(pad->entity);
 		src_fmt.pad = pad->index;
-		ret = v4l2_subdev_call(sd, pad, get_fmt, NULL, &src_fmt);
+		ret = v4l2_subdev_call(sd, pad, get_fmt, NULL, NULL, &src_fmt);
 		if (ret < 0 && ret != -ENOIOCTLCMD)
 			return -EPIPE;
 

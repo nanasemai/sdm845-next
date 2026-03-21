@@ -226,6 +226,7 @@ static bool adv748x_csi2_is_fmt_supported(struct adv748x_csi2 *tx, u32 code)
 }
 
 static int adv748x_csi2_set_format(struct v4l2_subdev *sd,
+				   const struct v4l2_subdev_client_info *ci,
 				   struct v4l2_subdev_state *sd_state,
 				   struct v4l2_subdev_format *sdformat)
 {
@@ -233,7 +234,7 @@ static int adv748x_csi2_set_format(struct v4l2_subdev *sd,
 	struct v4l2_mbus_framefmt *mbusformat;
 
 	if (sdformat->pad == ADV748X_CSI2_SOURCE)
-		return v4l2_subdev_get_fmt(sd, sd_state, sdformat);
+		return v4l2_subdev_get_fmt(sd, NULL, sd_state, sdformat);
 
 	/*
 	 * Make sure the format is supported, if not default it to

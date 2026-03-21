@@ -517,7 +517,7 @@ static int c3_isp_cap_link_validate(struct media_link *link)
 	};
 	int ret;
 
-	ret = v4l2_subdev_call_state_active(sd, pad, get_fmt, &src_fmt);
+	ret = v4l2_subdev_call_ci_state_active(sd, pad, get_fmt, &src_fmt);
 	if (ret)
 		return ret;
 

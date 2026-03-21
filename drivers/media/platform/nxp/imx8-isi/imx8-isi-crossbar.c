@@ -248,6 +248,7 @@ static int mxc_isi_crossbar_enum_mbus_code(struct v4l2_subdev *sd,
 }
 
 static int mxc_isi_crossbar_set_fmt(struct v4l2_subdev *sd,
+				    const struct v4l2_subdev_client_info *ci,
 				    struct v4l2_subdev_state *state,
 				    struct v4l2_subdev_format *fmt)
 {
@@ -264,7 +265,7 @@ static int mxc_isi_crossbar_set_fmt(struct v4l2_subdev *sd,
 	 * can't be modified.
 	 */
 	if (fmt->pad >= xbar->num_sinks)
-		return v4l2_subdev_get_fmt(sd, state, fmt);
+		return v4l2_subdev_get_fmt(sd, NULL, state, fmt);
 
 	/* Validate the requested format. */
 	if (!mxc_isi_bus_format_by_code(fmt->format.code, MXC_ISI_PIPE_PAD_SINK))

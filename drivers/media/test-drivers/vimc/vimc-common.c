@@ -250,7 +250,7 @@ static int vimc_get_pix_format(struct media_pad *pad,
 		const struct vimc_pix_map *pix_map;
 		int ret;
 
-		ret = v4l2_subdev_call(sd, pad, get_fmt, NULL, &sd_fmt);
+		ret = v4l2_subdev_call(sd, pad, get_fmt, NULL, NULL, &sd_fmt);
 		if (ret)
 			return ret;
 
