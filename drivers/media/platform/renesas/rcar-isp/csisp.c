@@ -331,13 +331,14 @@ static int risp_disable_streams(struct v4l2_subdev *sd,
 }
 
 static int risp_set_pad_format(struct v4l2_subdev *sd,
+			       const struct v4l2_subdev_client_info *ci,
 			       struct v4l2_subdev_state *state,
 			       struct v4l2_subdev_format *format)
 {
 	struct v4l2_mbus_framefmt *framefmt;
 
 	if (format->pad > RCAR_ISP_SINK)
-		return v4l2_subdev_get_fmt(sd, state, format);
+		return v4l2_subdev_get_fmt(sd, NULL, state, format);
 
 	if (!risp_code_to_fmt(format->format.code))
 		format->format.code = rcar_isp_formats[0].code;

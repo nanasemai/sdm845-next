@@ -304,6 +304,7 @@ static int rkisp1_csi_init_state(struct v4l2_subdev *sd,
 }
 
 static int rkisp1_csi_set_fmt(struct v4l2_subdev *sd,
+			      const struct v4l2_subdev_client_info *ci,
 			      struct v4l2_subdev_state *sd_state,
 			      struct v4l2_subdev_format *fmt)
 {
@@ -313,7 +314,7 @@ static int rkisp1_csi_set_fmt(struct v4l2_subdev *sd,
 
 	/* The format on the source pad always matches the sink pad. */
 	if (fmt->pad == RKISP1_CSI_PAD_SRC)
-		return v4l2_subdev_get_fmt(sd, sd_state, fmt);
+		return v4l2_subdev_get_fmt(sd, NULL, sd_state, fmt);
 
 	sink_fmt = v4l2_subdev_state_get_format(sd_state, RKISP1_CSI_PAD_SINK);
 

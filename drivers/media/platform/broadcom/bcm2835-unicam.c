@@ -452,6 +452,33 @@ static const struct unicam_format_info unicam_image_formats[] = {
 		.csi_dt		= MIPI_CSI2_DT_RAW14,
 		.unpack		= UNICAM_PUM_UNPACK14,
 	}, {
+	/* Generic raw formats */
+		.fourcc		= V4L2_PIX_FMT_RAW_8,
+		.code		= MEDIA_BUS_FMT_RAW_8,
+		.depth		= 8,
+		.csi_dt		= MIPI_CSI2_DT_RAW8,
+	}, {
+		.fourcc		= V4L2_PIX_FMT_RAW_CSI2_10,
+		.unpacked_fourcc = V4L2_PIX_FMT_RAW_16,
+		.code		= MEDIA_BUS_FMT_RAW_10,
+		.depth		= 10,
+		.csi_dt		= MIPI_CSI2_DT_RAW10,
+		.unpack		= UNICAM_PUM_UNPACK10,
+	}, {
+		.fourcc		= V4L2_PIX_FMT_RAW_CSI2_12,
+		.unpacked_fourcc = V4L2_PIX_FMT_RAW_16,
+		.code		= MEDIA_BUS_FMT_RAW_12,
+		.depth		= 12,
+		.csi_dt		= MIPI_CSI2_DT_RAW12,
+		.unpack		= UNICAM_PUM_UNPACK12,
+	}, {
+		.fourcc		= V4L2_PIX_FMT_RAW_CSI2_14,
+		.unpacked_fourcc = V4L2_PIX_FMT_RAW_16,
+		.code		= MEDIA_BUS_FMT_RAW_14,
+		.depth		= 14,
+		.csi_dt		= MIPI_CSI2_DT_RAW14,
+		.unpack		= UNICAM_PUM_UNPACK14,
+	}, {
 	/* 16 bit Bayer formats could be supported. */
 
 	/* Greyscale formats */
@@ -1327,6 +1354,7 @@ static int unicam_subdev_enum_frame_size(struct v4l2_subdev *sd,
 }
 
 static int unicam_subdev_set_format(struct v4l2_subdev *sd,
+				    const struct v4l2_subdev_client_info *ci,
 				    struct v4l2_subdev_state *state,
 				    struct v4l2_subdev_format *format)
 {
@@ -1342,7 +1370,7 @@ static int unicam_subdev_set_format(struct v4l2_subdev *sd,
 
 	/* No transcoding, source and sink formats must match. */
 	if (unicam_sd_pad_is_source(format->pad))
-		return v4l2_subdev_get_fmt(sd, state, format);
+		return v4l2_subdev_get_fmt(sd, NULL, state, format);
 
 	/*
 	 * Allowed formats for the stream on the sink pad depend on what source

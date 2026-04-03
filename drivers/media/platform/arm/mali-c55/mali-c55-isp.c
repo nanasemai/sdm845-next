@@ -203,6 +203,7 @@ static int mali_c55_isp_enum_frame_size(struct v4l2_subdev *sd,
 }
 
 static int mali_c55_isp_set_fmt(struct v4l2_subdev *sd,
+				const struct v4l2_subdev_client_info *ci,
 				struct v4l2_subdev_state *state,
 				struct v4l2_subdev_format *format)
 {
@@ -217,7 +218,7 @@ static int mali_c55_isp_set_fmt(struct v4l2_subdev *sd,
 	 * format.
 	 */
 	if (format->pad != MALI_C55_ISP_PAD_SINK_VIDEO)
-		return v4l2_subdev_get_fmt(sd, state, format);
+		return v4l2_subdev_get_fmt(sd, NULL, state, format);
 
 	sink_fmt = v4l2_subdev_state_get_format(state,
 						MALI_C55_ISP_PAD_SINK_VIDEO);
@@ -265,6 +266,7 @@ static int mali_c55_isp_set_fmt(struct v4l2_subdev *sd,
 }
 
 static int mali_c55_isp_get_selection(struct v4l2_subdev *sd,
+				      const struct v4l2_subdev_client_info *ci,
 				      struct v4l2_subdev_state *state,
 				      struct v4l2_subdev_selection *sel)
 {
@@ -278,6 +280,7 @@ static int mali_c55_isp_get_selection(struct v4l2_subdev *sd,
 }
 
 static int mali_c55_isp_set_selection(struct v4l2_subdev *sd,
+				      const struct v4l2_subdev_client_info *ci,
 				      struct v4l2_subdev_state *state,
 				      struct v4l2_subdev_selection *sel)
 {

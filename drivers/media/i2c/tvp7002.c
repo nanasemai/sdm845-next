@@ -830,6 +830,7 @@ tvp7002_enum_mbus_code(struct v4l2_subdev *sd,
  */
 static int
 tvp7002_get_pad_format(struct v4l2_subdev *sd,
+		       const struct v4l2_subdev_client_info *ci,
 		       struct v4l2_subdev_state *sd_state,
 		       struct v4l2_subdev_format *fmt)
 {
@@ -854,10 +855,11 @@ tvp7002_get_pad_format(struct v4l2_subdev *sd,
  */
 static int
 tvp7002_set_pad_format(struct v4l2_subdev *sd,
+		       const struct v4l2_subdev_client_info *ci,
 		       struct v4l2_subdev_state *sd_state,
 		       struct v4l2_subdev_format *fmt)
 {
-	return tvp7002_get_pad_format(sd, sd_state, fmt);
+	return tvp7002_get_pad_format(sd, NULL, sd_state, fmt);
 }
 
 /* V4L2 core operation handlers */

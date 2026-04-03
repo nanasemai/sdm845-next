@@ -360,7 +360,7 @@ static int rvin_remote_rectangle(struct rvin_dev *vin, struct v4l2_rect *rect)
 	index = pad->index;
 
 	fmt.pad = index;
-	ret = v4l2_subdev_call(sd, pad, get_fmt, NULL, &fmt);
+	ret = v4l2_subdev_call(sd, pad, get_fmt, NULL, NULL, &fmt);
 	if (ret)
 		return ret;
 

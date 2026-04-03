@@ -521,6 +521,7 @@ static int c3_mipi_adap_enum_mbus_code(struct v4l2_subdev *sd,
 }
 
 static int c3_mipi_adap_set_fmt(struct v4l2_subdev *sd,
+				const struct v4l2_subdev_client_info *ci,
 				struct v4l2_subdev_state *state,
 				struct v4l2_subdev_format *format)
 {
@@ -528,7 +529,7 @@ static int c3_mipi_adap_set_fmt(struct v4l2_subdev *sd,
 	const struct c3_adap_pix_format *pix_format;
 
 	if (format->pad != C3_MIPI_ADAP_PAD_SINK)
-		return v4l2_subdev_get_fmt(sd, state, format);
+		return v4l2_subdev_get_fmt(sd, NULL, state, format);
 
 	pix_format = c3_mipi_adap_find_format(format->format.code);
 	if (!pix_format)
