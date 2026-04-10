@@ -2377,13 +2377,18 @@ int v4l2_subdev_enable_streams(struct v4l2_subdev *sd, u32 pad,
 		return 0;
 
 	/* Fallback on .s_stream() if .enable_streams() isn't available. */
-	use_s_stream = v4l2_subdev_has_op(sd, pad, enable_streams);
+	use_s_stream = !v4l2_subdev_has_op(sd, pad, enable_streams);
 
 	if (!use_s_stream) {
-		if (!v4l2_subdev_has_op(sd, video, s_stream))
-			return -ENOIOCTLCMD;
 		state = v4l2_subdev_lock_and_get_active_state(sd);
 	} else {
+		/*
+		 * Bail out if .s_stream() is missing or is the helper itself
+		 * (which calls back here and would recurse forever).
+		 */
+		if (!v4l2_subdev_has_op(sd, video, s_stream) ||
+		    sd->ops->video->s_stream == v4l2_subdev_s_stream_helper)
+			return -ENOIOCTLCMD;
 		state = NULL;
 	}
 
@@ -2484,10 +2489,15 @@ int v4l2_subdev_disable_streams(struct v4l2_subdev *sd, u32 pad,
 	use_s_stream = !v4l2_subdev_has_op(sd, pad, disable_streams);
 
 	if (!use_s_stream) {
-		if (!v4l2_subdev_has_op(sd, video, s_stream))
-			return -ENOIOCTLCMD;
 		state = v4l2_subdev_lock_and_get_active_state(sd);
 	} else {
+		/*
+		 * Bail out if .s_stream() is missing or is the helper itself
+		 * (which calls back here and would recurse forever).
+		 */
+		if (!v4l2_subdev_has_op(sd, video, s_stream) ||
+		    sd->ops->video->s_stream == v4l2_subdev_s_stream_helper)
+			return -ENOIOCTLCMD;
 		state = NULL;
 	}
 
