@@ -73,6 +73,16 @@ MODULE_PARM_DESC(autosuspend, "default autosuspend delay");
 #define usb_autosuspend_delay		0
 #endif
 
+static bool forceselfpowered;
+module_param(forceselfpowered, bool, 0644);
+MODULE_PARM_DESC(forceselfpowered, "force all USB devices to be self-powered");
+
+bool usbcore_force_selfpowered(void)
+{
+	return forceselfpowered;
+}
+EXPORT_SYMBOL_GPL(usbcore_force_selfpowered);
+
 static bool match_endpoint(struct usb_endpoint_descriptor *epd,
 		struct usb_endpoint_descriptor **bulk_in,
 		struct usb_endpoint_descriptor **bulk_out,

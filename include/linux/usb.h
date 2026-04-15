@@ -1378,6 +1378,7 @@ extern void usb_deregister_dev(struct usb_interface *intf,
 			       struct usb_class_driver *class_driver);
 
 extern int usb_disabled(void);
+extern bool usbcore_force_selfpowered(void);
 
 /* ----------------------------------------------------------------------- */
 

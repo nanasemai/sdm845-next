@@ -1564,6 +1564,9 @@ static int hub_configure(struct usb_hub *hub,
 		break;
 	}
 
+	if (usbcore_force_selfpowered())
+		hdev->bus_mA = 500;
+
 	switch (wHubCharacteristics & HUB_CHAR_OCPM) {
 	case HUB_CHAR_COMMON_OCPM:
 		dev_dbg(hub_dev, "global over-current protection\n");
