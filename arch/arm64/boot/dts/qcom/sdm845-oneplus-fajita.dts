@@ -16,6 +16,7 @@
 		compatible = "simple-battery";
 
 		charge-full-design-microamp-hours = <3700000>;
+		energy-full-design-microwatt-hours = <16280000000>;
 		voltage-min-design-microvolt = <3400000>;
 		voltage-max-design-microvolt = <4400000>;
 
