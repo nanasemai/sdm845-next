@@ -5225,7 +5225,7 @@ static const struct camss_resources sdm670_resources = {
 
 static const struct camss_resources sdm845_resources = {
 	.version = CAMSS_845,
-	.pd_name = "top",
+	.pd_name = "titan_top",
 	.csiphy_res = csiphy_res_845,
 	.csid_res = csid_res_845,
 	.vfe_res = vfe_res_845,
