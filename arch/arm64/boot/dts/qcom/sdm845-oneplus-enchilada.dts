@@ -55,6 +55,10 @@
 	status = "okay";
 };
 
+&wifi {
+	status = "okay";
+};
+
 &framebuffer {
 	height = <2280>;
 };
