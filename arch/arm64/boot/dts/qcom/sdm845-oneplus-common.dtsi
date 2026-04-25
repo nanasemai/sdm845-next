@@ -236,7 +236,7 @@
 
 	wcn3990-pmu {
 		compatible = "qcom,wcn3990-pmu";
-		status = "okay";
+		status = "disabled";
 
 		pinctrl-0 = <&sw_ctrl_default>;
 		pinctrl-names = "default";
