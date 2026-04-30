@@ -17,6 +17,7 @@ struct msm_dp {
 	struct drm_connector *connector;
 	struct drm_bridge *next_bridge;
 	struct drm_bridge *bridge;
+	struct device_node *connector_node;
 	bool audio_enabled;
 	bool power_on;
 	unsigned int connector_type;

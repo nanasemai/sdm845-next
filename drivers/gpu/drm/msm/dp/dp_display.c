@@ -9,6 +9,7 @@
 #include <linux/debugfs.h>
 #include <linux/component.h>
 #include <linux/of_irq.h>
+#include <linux/of_graph.h>
 #include <linux/phy/phy.h>
 #include <linux/delay.h>
 #include <linux/string_choices.h>
@@ -1081,6 +1082,35 @@ static int msm_dp_display_probe_tail(struct device *dev)
 		dp->next_bridge = NULL;
 		if (dp->is_edp || ret != -ENODEV)
 			return ret;
+	}
+
+	/*
+	 * For USB-C DP Alt Mode without an external bridge, find the USB-C
+	 * connector node by following the output port graph through the PHY.
+	 * This allows drm_bridge_connector_init() to set the connector fwnode
+	 * for OOB hotplug event delivery from the typec_displayport driver.
+	 */
+	if (!dp->next_bridge && !dp->is_edp) {
+		struct device_node *endpoint, *phy_node, *phy_ep, *conn_node;
+
+		endpoint = of_graph_get_endpoint_by_regs(dp->pdev->dev.of_node, 1, 0);
+		if (endpoint) {
+			phy_node = of_graph_get_remote_port_parent(endpoint);
+			of_node_put(endpoint);
+			if (phy_node) {
+				phy_ep = of_graph_get_endpoint_by_regs(phy_node, 0, 0);
+				of_node_put(phy_node);
+				if (phy_ep) {
+					conn_node = of_graph_get_remote_port_parent(phy_ep);
+					of_node_put(phy_ep);
+					dp->connector_node = conn_node;
+					if (conn_node)
+						dev_info(dev, "DP: found USB-C connector node: %pOF\n", conn_node);
+					else
+						dev_warn(dev, "DP: failed to find connector from PHY port@0\n");
+				}
+			}
+		}
 	}
 
 	ret = component_add(dev, &msm_dp_display_comp_ops);

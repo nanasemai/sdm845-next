@@ -308,6 +308,19 @@ int msm_dp_bridge_init(struct msm_dp *msm_dp_display, struct drm_device *dev,
 	bridge->ycbcr_420_allowed = yuv_supported;
 
 	/*
+	 * When there is no next bridge (e.g. USB-C DP Alt Mode without an
+	 * external bridge chip), this bridge is the last in the chain.
+	 * Set of_node so that drm_bridge_connector_init() propagates the
+	 * fwnode to the DRM connector, enabling drm_connector_oob_hotplug_event()
+	 * to deliver HPD from the Type-C altmode driver.
+	 */
+	if (!msm_dp_display->next_bridge && !msm_dp_display->is_edp) {
+		bridge->of_node = msm_dp_display->connector_node;
+		if (bridge->of_node)
+			DRM_INFO("DP bridge: of_node set to %pOF for OOB HPD\n", bridge->of_node);
+	}
+
+	/*
 	 * Many ops only make sense for DP. Why?
 	 * - Detect/HPD are used by DRM to know if a display is _physically_
 	 *   there, not whether the display is powered on / finished initting.
