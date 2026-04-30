@@ -474,6 +474,12 @@ static int qcom_pmic_typec_pdphy_enable(struct pmic_typec_pdphy *pmic_typec_pdph
 		goto done;
 
 	qcom_pmic_typec_pdphy_reset_off(pmic_typec_pdphy);
+
+	/* Initialize RX buffer ownership to PDPHY HW */
+	ret = regmap_write(pmic_typec_pdphy->regmap,
+			   pmic_typec_pdphy->base + USB_PDPHY_RX_ACKNOWLEDGE_REG, 0);
+	if (ret)
+		goto done;
 done:
 	if (ret)
 		dev_err(dev, "pdphy_enable fail %d\n", ret);
