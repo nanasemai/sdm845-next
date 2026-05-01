@@ -530,6 +530,7 @@ void msm_dp_aux_init(struct drm_dp_aux *msm_dp_aux)
 
 	mutex_lock(&aux->mutex);
 
+	msm_dp_aux_reset(aux);
 	msm_dp_aux_enable(aux);
 	aux->retry_cnt = 0;
 	aux->initted = true;
