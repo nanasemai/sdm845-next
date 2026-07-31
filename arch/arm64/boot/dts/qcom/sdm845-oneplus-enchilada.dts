@@ -111,6 +111,7 @@
 
 &rmi4_f12 {
 	touchscreen-y-mm = <144>;
+	syna,clip-y-high = <2279>;
 };
 
 &sound {
