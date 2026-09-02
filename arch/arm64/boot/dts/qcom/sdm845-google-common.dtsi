@@ -661,6 +661,24 @@
 	};
 };
 
+&i2c10 {
+	status = "okay";
+
+	wireless_charger: charger@61 {
+		compatible = "idt,p9221";
+		reg = <0x61>;
+
+		interrupts-extended = <&tlmm 124 IRQ_TYPE_LEVEL_LOW>,
+				      <&tlmm 36 IRQ_TYPE_EDGE_BOTH>;
+		interrupt-names = "int", "pg";
+
+		enable-gpios = <&tlmm 122 GPIO_ACTIVE_LOW>;
+
+		pinctrl-0 = <&wireless_charger_default>;
+		pinctrl-names = "default";
+	};
+};
+
 &i2c12 {
 	status = "okay";
 
@@ -1084,6 +1102,22 @@
 
 		irq-pins {
 			pins = "gpio115";
+			function = "gpio";
+			drive-strength = <2>;
+			bias-pull-up;
+		};
+	};
+
+	wireless_charger_default: wireless-charger-default-state {
+		pg-pins {
+			pins = "gpio36";
+			function = "gpio";
+			drive-strength = <2>;
+			bias-pull-down;
+		};
+
+		int-pins {
+			pins = "gpio124";
 			function = "gpio";
 			drive-strength = <2>;
 			bias-pull-up;
