@@ -306,6 +306,15 @@ enum smb_generation {
 #define OTG_SS_SLOW					0x3
 
 #define DCIN_AICL_REF_SEL_CFG				0x481
+
+#define DCIN_INT_RT_STS					0x410
+#define DCIN_PLUGIN_RT_STS_BIT				BIT(4)
+
+#define DCIN_CURRENT_LIMIT_CFG				0x470
+#define DCIN_CURRENT_LIMIT_MASK				GENMASK(7, 0)
+
+#define DCIN_AICL_OPTIONS_CFG				0x480
+#define DCIN_AICL_ADC_EN_BIT				BIT(3)
 #define DCIN_CONT_AICL_THRESHOLD_CFG_MASK		GENMASK(5, 0)
 
 #define WI_PWR_OPTIONS					0x495
@@ -476,19 +485,42 @@ static enum power_supply_property smb_properties[] = {
 	POWER_SUPPLY_PROP_USB_TYPE,
 };
 
+static int smb_get_power_path_status(struct smb_chip *chip, unsigned int *stat)
+{
+	int rc;
+
+	rc = regmap_read(chip->regmap, chip->base + POWER_PATH_STATUS(chip), stat);
+	if (rc < 0)
+		dev_err(chip->dev, "Couldn't read power path status: %d\n", rc);
+
+	return rc;
+}
+
 static int smb_get_prop_usb_online(struct smb_chip *chip, int *val)
 {
 	unsigned int stat;
 	int rc;
 
-	rc = regmap_read(chip->regmap, chip->base + POWER_PATH_STATUS(chip), &stat);
-	if (rc < 0) {
-		dev_err(chip->dev, "Couldn't read power path status: %d\n", rc);
+	rc = smb_get_power_path_status(chip, &stat);
+	if (rc < 0)
 		return rc;
-	}
 
 	*val = (stat & P_PATH_USE_USBIN_BIT) &&
 	       (stat & P_PATH_VALID_INPUT_POWER_SOURCE_STS_BIT);
+	return 0;
+}
+
+/* Any valid input, USBIN or DCIN */
+static int smb_get_prop_input_present(struct smb_chip *chip, int *val)
+{
+	unsigned int stat;
+	int rc;
+
+	rc = smb_get_power_path_status(chip, &stat);
+	if (rc < 0)
+		return rc;
+
+	*val = !!(stat & P_PATH_VALID_INPUT_POWER_SOURCE_STS_BIT);
 	return 0;
 }
 
@@ -610,11 +642,11 @@ static int smb_map_charge_status(struct smb_chip *chip, u32 stat, int *val)
 static int smb_get_prop_status(struct smb_chip *chip, int *val)
 {
 	u32 stat;
-	int usb_online = 0;
+	int input_present = 0;
 	int rc;
 
-	rc = smb_get_prop_usb_online(chip, &usb_online);
-	if (!usb_online) {
+	rc = smb_get_prop_input_present(chip, &input_present);
+	if (!input_present) {
 		*val = POWER_SUPPLY_STATUS_DISCHARGING;
 		return rc;
 	}
@@ -927,6 +959,24 @@ static irqreturn_t smb_handle_usb_plugin(int irq, void *data)
 
 	schedule_delayed_work(&chip->status_change_work,
 			      msecs_to_jiffies(1500));
+
+	return IRQ_HANDLED;
+}
+
+static irqreturn_t smb_handle_dcin_plugin(int irq, void *data)
+{
+	struct smb_chip *chip = data;
+	unsigned int stat;
+	int rc;
+
+	rc = regmap_read(chip->regmap, chip->base + DCIN_INT_RT_STS, &stat);
+	if (rc < 0)
+		dev_err(chip->dev, "Couldn't read DCIN status: %d\n", rc);
+	else
+		dev_dbg(chip->dev, "DCIN %s\n",
+			stat & DCIN_PLUGIN_RT_STS_BIT ? "plugged" : "unplugged");
+
+	power_supply_changed(chip->chg_psy);
 
 	return IRQ_HANDLED;
 }
@@ -1257,6 +1307,17 @@ static const struct smb_init_register smb2_init_seq[] = {
 	{ .addr = FAST_CHARGE_CURRENT_CFG,
 	  .mask = FAST_CHARGE_CURRENT_SETTING_MASK,
 	  .val = 1000000 / SMB2_CURRENT_STEP_UA },
+	/*
+	 * DCIN is fed by a wireless power receiver on some boards. Don't use
+	 * the WiPower protocol and limit the input current to what a 5V
+	 * baseline power profile transmitter can deliver.
+	 */
+	{ .addr = WI_PWR_OPTIONS, .mask = 0xff, .val = 0 },
+	{ .addr = DCIN_AICL_REF_SEL_CFG, .mask = 0xff, .val = 0x02 },
+	{ .addr = DCIN_AICL_OPTIONS_CFG, .mask = DCIN_AICL_ADC_EN_BIT, .val = 0 },
+	{ .addr = DCIN_CURRENT_LIMIT_CFG,
+	  .mask = DCIN_CURRENT_LIMIT_MASK,
+	  .val = 700000 / SMB2_CURRENT_STEP_UA },
 };
 
 static const struct smb_match_data pmi8998_match_data = {
@@ -1507,6 +1568,14 @@ static int smb_probe(struct platform_device *pdev)
 	rc = smb_init_irq(chip, &irq, "wdog-bark", smb_handle_wdog_bark);
 	if (rc < 0)
 		return rc;
+
+	/* Optional, only boards with a DCIN supply describe it */
+	if (platform_get_irq_byname_optional(pdev, "dcin-plugin") > 0) {
+		rc = smb_init_irq(chip, &irq, "dcin-plugin",
+				  smb_handle_dcin_plugin);
+		if (rc < 0)
+			return rc;
+	}
 
 	devm_device_init_wakeup(chip->dev);
 
