@@ -12597,6 +12597,13 @@ S:	Maintained
 W:	https://github.com/o2genum/ideapad-slidebar
 F:	drivers/input/misc/ideapad_slidebar.c
 
+IDT P9221 WIRELESS POWER RECEIVER DRIVER
+M:	David Heidelberg <david@ixit.cz>
+L:	linux-pm@vger.kernel.org
+S:	Maintained
+F:	Documentation/devicetree/bindings/power/supply/idt,p9221.yaml
+F:	drivers/power/supply/p9221_charger.c
+
 IDT VersaClock 5 CLOCK DRIVER
 M:	Luca Ceresoli <luca@lucaceresoli.net>
 S:	Maintained
