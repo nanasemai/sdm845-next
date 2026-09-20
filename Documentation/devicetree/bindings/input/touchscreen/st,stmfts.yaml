@@ -47,6 +47,27 @@ properties:
     description: Reset GPIO (active-low)
     maxItems: 1
 
+  wakeup-source: true
+
+patternProperties:
+  "^event-(tap-double|swipe-(up|down|left|right))$":
+    type: object
+    $ref: ../input.yaml#
+    description:
+      A gesture the FTS5 controller keeps detecting in its low power scan
+      mode, reported as a key on a separate "stmfts gestures" input device.
+      The low power scan mode is entered when the touchscreen input device
+      is closed or the system suspends, provided the device may wake up
+      the system.
+
+    properties:
+      linux,code: true
+
+    required:
+      - linux,code
+
+    additionalProperties: false
+
 required:
   - compatible
   - reg
@@ -85,5 +106,29 @@ examples:
             avdd-supply = <&ldo30_reg>;
             vdd-supply = <&ldo31_reg>;
             ledvdd-supply = <&ldo33_reg>;
+        };
+    };
+
+  - |
+    #include <dt-bindings/input/input.h>
+    #include <dt-bindings/interrupt-controller/irq.h>
+
+    i2c {
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        touchscreen@49 {
+            compatible = "st,stmfts5";
+            reg = <0x49>;
+            interrupts-extended = <&tlmm 125 IRQ_TYPE_LEVEL_LOW>;
+            touchscreen-size-x = <1080>;
+            touchscreen-size-y = <2160>;
+            avdd-supply = <&vreg_l19a_3p3>;
+            vdd-supply = <&vreg_l14a_1p8>;
+            wakeup-source;
+
+            event-tap-double {
+                linux,code = <KEY_WAKEUP>;
+            };
         };
     };
