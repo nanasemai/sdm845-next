@@ -63,12 +63,23 @@
 #define FACTORY_REGISTER_OPMODE		0x01
 #define PMOD_REGISTER_OPMODE		0xa5
 
+#define GESTURE_REGISTER_EN		0xd0
+#define GESTURE_REGISTER_MASK		0xd1
+#define GESTURE_REGISTER_OUTPUT		0xd3
+
+/*
+ * The gesture ID reported in GESTURE_REGISTER_OUTPUT also gives the position
+ * of the gesture's bit in GESTURE_REGISTER_MASK.
+ */
+#define GESTURE_ID_FIRST		0x20
+
 #define TOUCH_EVENT_DOWN		0x00
 #define TOUCH_EVENT_UP			0x01
 #define TOUCH_EVENT_ON			0x02
 #define TOUCH_EVENT_RESERVED		0x03
 
 #define EDT_NAME_LEN			23
+#define EDT_GESTURE_DEV_NAME		"edt-ft5x06 gestures"
 #define EDT_SWITCH_MODE_RETRIES		10
 #define EDT_SWITCH_MODE_DELAY		5 /* msec */
 #define EDT_RAW_DATA_RETRIES		100
@@ -79,6 +90,20 @@
 
 #define M06_REG_CMD(factory) ((factory) ? 0xf3 : 0xfc)
 #define M06_REG_ADDR(factory, addr) ((factory) ? (addr) & 0x7f : (addr) & 0x3f)
+
+/* FocalTech gestures: DT event node and the gesture ID */
+struct edt_ft5x06_gesture {
+	const char *node;
+	u8 id;
+};
+
+static const struct edt_ft5x06_gesture edt_ft5x06_gestures[] = {
+	{ "event-swipe-left",	0x20 },
+	{ "event-swipe-right",	0x21 },
+	{ "event-swipe-up",	0x22 },
+	{ "event-swipe-down",	0x23 },
+	{ "event-tap-double",	0x24 },
+};
 
 enum edt_pmode {
 	EDT_PMODE_NOT_SUPPORTED,
@@ -108,6 +133,7 @@ struct edt_reg_addr {
 struct edt_ft5x06_ts_data {
 	struct i2c_client *client;
 	struct input_dev *input;
+	struct input_dev *gesture_input;
 	struct touchscreen_properties prop;
 	u16 num_x;
 	u16 num_y;
@@ -126,6 +152,7 @@ struct edt_ft5x06_ts_data {
 
 	struct mutex mutex;
 	bool factory_mode;
+	bool in_gesture_mode;
 	enum edt_pmode suspend_mode;
 	int threshold;
 	int gain;
@@ -135,6 +162,8 @@ struct edt_ft5x06_ts_data {
 	int report_rate;
 	int max_support_points;
 	int point_len;
+	unsigned int gesture_code[ARRAY_SIZE(edt_ft5x06_gestures)];
+	u8 gesture_mask;
 	u8 tdata_cmd;
 	int tdata_len;
 	int tdata_offset;
@@ -150,6 +179,7 @@ struct edt_ft5x06_ts_data {
 
 struct edt_i2c_chip_data {
 	int  max_support_points;
+	bool has_wake_gestures;
 };
 
 static const struct regmap_config edt_ft5x06_i2c_regmap_config = {
@@ -295,6 +325,35 @@ static const struct regmap_config edt_M06_i2c_regmap_config = {
 	.write = edt_M06_i2c_write,
 };
 
+static void edt_ft5x06_ts_report_gesture(struct edt_ft5x06_ts_data *tsdata)
+{
+	struct device *dev = &tsdata->client->dev;
+	unsigned int code = KEY_RESERVED;
+	unsigned int id;
+	int error, i;
+
+	error = regmap_read(tsdata->regmap, GESTURE_REGISTER_OUTPUT, &id);
+	if (error) {
+		dev_err_ratelimited(dev, "Unable to fetch gesture, error: %d\n",
+				    error);
+		return;
+	}
+
+	for (i = 0; i < ARRAY_SIZE(edt_ft5x06_gestures); i++)
+		if (edt_ft5x06_gestures[i].id == id)
+			code = tsdata->gesture_code[i];
+
+	if (code == KEY_RESERVED) {
+		dev_dbg(dev, "unhandled gesture %#x\n", id);
+		return;
+	}
+
+	input_report_key(tsdata->gesture_input, code, 1);
+	input_sync(tsdata->gesture_input);
+	input_report_key(tsdata->gesture_input, code, 0);
+	input_sync(tsdata->gesture_input);
+}
+
 static irqreturn_t edt_ft5x06_ts_isr(int irq, void *dev_id)
 {
 	struct edt_ft5x06_ts_data *tsdata = dev_id;
@@ -302,6 +361,11 @@ static irqreturn_t edt_ft5x06_ts_isr(int irq, void *dev_id)
 	u8 rdbuf[63];
 	int i, type, x, y, id;
 	int error;
+
+	if (tsdata->in_gesture_mode) {
+		edt_ft5x06_ts_report_gesture(tsdata);
+		return IRQ_HANDLED;
+	}
 
 	memset(rdbuf, 0, sizeof(rdbuf));
 	error = regmap_bulk_read(tsdata->regmap, tsdata->tdata_cmd, rdbuf,
@@ -1113,6 +1177,110 @@ static void edt_ft5x06_disable_regulators(void *arg)
 	regulator_disable(data->iovcc);
 }
 
+static int edt_ft5x06_ts_set_gesture_mode(struct edt_ft5x06_ts_data *tsdata,
+					  bool enable)
+{
+	int error;
+
+	if (enable) {
+		error = regmap_write(tsdata->regmap, GESTURE_REGISTER_MASK,
+				     tsdata->gesture_mask);
+		if (error)
+			return error;
+	} else {
+		/* let the IRQ thread read the gesture that woke us first */
+		synchronize_irq(tsdata->client->irq);
+	}
+
+	error = regmap_write(tsdata->regmap, GESTURE_REGISTER_EN, enable);
+	if (error)
+		return error;
+
+	tsdata->in_gesture_mode = enable;
+
+	return 0;
+}
+
+/*
+ * The touchscreen is opened and closed by userspace, either by opening and
+ * closing its event device or through the "inhibited" attribute. Closing it
+ * is the moment to start looking for the wakeup gestures.
+ */
+static int edt_ft5x06_ts_open(struct input_dev *input)
+{
+	struct edt_ft5x06_ts_data *tsdata = input_get_drvdata(input);
+
+	if (!tsdata->in_gesture_mode)
+		return 0;
+
+	return edt_ft5x06_ts_set_gesture_mode(tsdata, false);
+}
+
+static void edt_ft5x06_ts_close(struct input_dev *input)
+{
+	struct edt_ft5x06_ts_data *tsdata = input_get_drvdata(input);
+	struct device *dev = &tsdata->client->dev;
+	int error;
+
+	if (!device_may_wakeup(dev))
+		return;
+
+	error = edt_ft5x06_ts_set_gesture_mode(tsdata, true);
+	if (error)
+		dev_warn(dev, "Failed to enter gesture mode: %d\n", error);
+}
+
+/*
+ * The gestures detected in gesture mode are reported on their own input
+ * device, so that they still reach userspace when the touchscreen input
+ * device has been closed.
+ */
+static int edt_ft5x06_ts_setup_gestures(struct edt_ft5x06_ts_data *tsdata)
+{
+	struct device *dev = &tsdata->client->dev;
+	struct input_dev *input = NULL;
+	struct fwnode_handle *child;
+	int i, error;
+
+	for (i = 0; i < ARRAY_SIZE(edt_ft5x06_gestures); i++) {
+		const struct edt_ft5x06_gesture *gesture = &edt_ft5x06_gestures[i];
+		unsigned int code;
+
+		child = device_get_named_child_node(dev, gesture->node);
+		if (!child)
+			continue;
+
+		error = fwnode_property_read_u32(child, "linux,code", &code);
+		fwnode_handle_put(child);
+		if (error)
+			return dev_err_probe(dev, error, "%s: failed to read linux,code\n",
+					     gesture->node);
+
+		if (code == KEY_RESERVED)
+			continue;
+
+		if (!input) {
+			input = devm_input_allocate_device(dev);
+			if (!input)
+				return -ENOMEM;
+
+			input->name = EDT_GESTURE_DEV_NAME;
+			input->id.bustype = BUS_I2C;
+		}
+
+		input_set_capability(input, EV_KEY, code);
+		tsdata->gesture_code[i] = code;
+		tsdata->gesture_mask |= BIT(gesture->id - GESTURE_ID_FIRST);
+	}
+
+	if (!input)
+		return 0;
+
+	tsdata->gesture_input = input;
+
+	return input_register_device(input);
+}
+
 static int edt_ft5x06_ts_probe(struct i2c_client *client)
 {
 	const struct i2c_device_id *id = i2c_client_get_device_id(client);
@@ -1301,6 +1469,17 @@ static int edt_ft5x06_ts_probe(struct i2c_client *client)
 
 	touchscreen_parse_properties(input, true, &tsdata->prop);
 
+	if (chip_data->has_wake_gestures) {
+		error = edt_ft5x06_ts_setup_gestures(tsdata);
+		if (error)
+			return error;
+
+		if (tsdata->gesture_input) {
+			input->open = edt_ft5x06_ts_open;
+			input->close = edt_ft5x06_ts_close;
+		}
+	}
+
 	error = input_mt_init_slots(input, tsdata->max_support_points,
 				    INPUT_MT_DIRECT);
 	if (error) {
@@ -1320,6 +1499,8 @@ static int edt_ft5x06_ts_probe(struct i2c_client *client)
 		dev_err(&client->dev, "Unable to request touchscreen IRQ.\n");
 		return error;
 	}
+
+	input_set_drvdata(input, tsdata);
 
 	error = input_register_device(input);
 	if (error)
@@ -1350,8 +1531,13 @@ static int edt_ft5x06_ts_suspend(struct device *dev)
 	struct gpio_desc *reset_gpio = tsdata->reset_gpio;
 	int ret;
 
-	if (device_may_wakeup(dev))
-		return 0;
+	if (device_may_wakeup(dev)) {
+		/* the IRQ stays enabled, the PM core arms it as the wake source */
+		if (!tsdata->gesture_input || tsdata->in_gesture_mode)
+			return 0;
+
+		return edt_ft5x06_ts_set_gesture_mode(tsdata, true);
+	}
 
 	if (tsdata->suspend_mode == EDT_PMODE_NOT_SUPPORTED)
 		return 0;
@@ -1392,8 +1578,18 @@ static int edt_ft5x06_ts_resume(struct device *dev)
 	struct edt_ft5x06_ts_data *tsdata = i2c_get_clientdata(client);
 	int ret = 0;
 
-	if (device_may_wakeup(dev))
-		return 0;
+	if (device_may_wakeup(dev)) {
+		if (!tsdata->in_gesture_mode)
+			return 0;
+
+		guard(mutex)(&tsdata->input->mutex);
+
+		/* stays armed until the input device is opened again */
+		if (!input_device_enabled(tsdata->input))
+			return 0;
+
+		return edt_ft5x06_ts_set_gesture_mode(tsdata, false);
+	}
 
 	if (tsdata->suspend_mode == EDT_PMODE_NOT_SUPPORTED)
 		return 0;
@@ -1461,6 +1657,7 @@ static const struct edt_i2c_chip_data edt_ft3518_data = {
 
 static const struct edt_i2c_chip_data edt_ft5452_data = {
 	.max_support_points = 5,
+	.has_wake_gestures = true,
 };
 
 static const struct edt_i2c_chip_data edt_ft5506_data = {
