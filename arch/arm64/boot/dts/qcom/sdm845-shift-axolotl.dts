@@ -802,6 +802,12 @@
 
 		touchscreen-size-x = <1080>;
 		touchscreen-size-y = <2160>;
+
+		wakeup-source;
+
+		event-tap-double {
+			linux,code = <KEY_WAKEUP>;
+		};
 	};
 };
 
