@@ -18,6 +18,7 @@
 #include <linux/leds.h>
 #include <linux/module.h>
 #include <linux/pm_runtime.h>
+#include <linux/property.h>
 #include <linux/regulator/consumer.h>
 
 /* I2C commands */
@@ -40,10 +41,21 @@
 #define STMFTS_MS_CX_TUNING			0xa3
 #define STMFTS_SS_CX_TUNING			0xa4
 #define STMFTS5_SET_SCAN_MODE			0xa0
+#define STMFTS5_SET_FEATURE			0xa2
 
 /* FTS5 scan mode commands */
 #define STMFTS5_SCAN_MODE_ACTIVE		0x00
+#define STMFTS5_SCAN_MODE_LOW_POWER		0x01
 #define STMFTS5_SCAN_ACTIVE_MULTI_TOUCH		BIT(0)
+
+/* FTS5 feature select, low power gestures: bit position = gesture ID */
+#define STMFTS5_FEATURE_GESTURE			0x03
+#define STMFTS5_GESTURE_MASK_SIZE		4
+
+/* FTS5 user report event types (event[1]) */
+#define STMFTS5_USER_KEY			0x00
+#define STMFTS5_USER_PROXIMITY			0x01
+#define STMFTS5_USER_GESTURE			0x02
 
 /* events */
 #define STMFTS_EV_NO_EVENT			0x00
@@ -106,6 +118,21 @@
 #define STMFTS_DATA_MAX_SIZE	(STMFTS_EVENT_SIZE * STMFTS_STACK_DEPTH)
 #define STMFTS_MAX_FINGERS	10
 #define STMFTS_DEV_NAME		"stmfts"
+#define STMFTS_GESTURE_DEV_NAME	"stmfts gestures"
+
+/* FTS5 gestures: DT event node and the gesture ID in event[2] */
+struct stmfts5_gesture {
+	const char *node;
+	u8 id;
+};
+
+static const struct stmfts5_gesture stmfts5_gestures[] = {
+	{ "event-swipe-up",	0x01 },
+	{ "event-swipe-down",	0x02 },
+	{ "event-swipe-left",	0x03 },
+	{ "event-swipe-right",	0x04 },
+	{ "event-tap-double",	0x05 },
+};
 
 static const struct regulator_bulk_data stmfts_supplies[] = {
 	{ .supply = "vdd" },
@@ -117,6 +144,7 @@ struct stmfts_data {
 
 	struct i2c_client *client;
 	struct input_dev *input;
+	struct input_dev *gesture_input;
 	struct gpio_desc *reset_gpio;
 	struct gpio_desc *mode_switch_gpio;
 	struct led_classdev led_cdev;
@@ -140,6 +168,9 @@ struct stmfts_data {
 
 	u8 data[STMFTS_DATA_MAX_SIZE];
 
+	u8 gesture_mask[STMFTS5_GESTURE_MASK_SIZE];
+	unsigned int gesture_code[ARRAY_SIZE(stmfts5_gestures)];
+
 	struct completion cmd_done;
 
 	bool use_key;
@@ -147,6 +178,7 @@ struct stmfts_data {
 	bool hover_enabled;
 	bool stylus_enabled;
 	bool running;
+	bool low_power;
 };
 
 struct stmfts_chip_ops {
@@ -155,6 +187,7 @@ struct stmfts_chip_ops {
 	void (*parse_events)(struct stmfts_data *sdata);
 	int  (*set_scan)(struct stmfts_data *sdata, bool enable);
 	int  (*set_hover)(struct stmfts_data *sdata, bool enable);
+	int  (*set_low_power)(struct stmfts_data *sdata);
 	int  (*runtime_resume)(struct stmfts_data *sdata);
 };
 
@@ -439,6 +472,31 @@ static void stmfts_parse_events(struct stmfts_data *sdata)
 	}
 }
 
+static void stmfts5_report_user_event(struct stmfts_data *sdata,
+				      const u8 event[])
+{
+	unsigned int code = KEY_RESERVED;
+	int i;
+
+	if (event[1] != STMFTS5_USER_GESTURE)
+		return;
+
+	for (i = 0; i < ARRAY_SIZE(stmfts5_gestures); i++)
+		if (stmfts5_gestures[i].id == event[2])
+			code = sdata->gesture_code[i];
+
+	if (code == KEY_RESERVED) {
+		dev_dbg(&sdata->client->dev, "unhandled gesture %*ph\n",
+			STMFTS_EVENT_SIZE, event);
+		return;
+	}
+
+	input_report_key(sdata->gesture_input, code, 1);
+	input_sync(sdata->gesture_input);
+	input_report_key(sdata->gesture_input, code, 0);
+	input_sync(sdata->gesture_input);
+}
+
 static void stmfts5_parse_events(struct stmfts_data *sdata)
 {
 	for (int i = 0; i < STMFTS_STACK_DEPTH; i++) {
@@ -455,9 +513,12 @@ static void stmfts5_parse_events(struct stmfts_data *sdata)
 
 		switch (event[0] & STMFTS5_MASK_EVENT_ID) {
 		case STMFTS5_EV_STATUS_UPDATE:
-		case STMFTS5_EV_USER_REPORT:
 		case STMFTS5_EV_DEBUG:
 			goto sync;
+
+		case STMFTS5_EV_USER_REPORT:
+			stmfts5_report_user_event(sdata, event);
+			break;
 
 		case STMFTS5_EV_MULTI_TOUCH_ENTER:
 		case STMFTS5_EV_MULTI_TOUCH_MOTION:
@@ -548,6 +609,34 @@ static int stmfts5_set_scan(struct stmfts_data *sdata, bool enable)
 	return 0;
 }
 
+static int stmfts5_set_low_power(struct stmfts_data *sdata)
+{
+	u8 gesture_cmd[2 + STMFTS5_GESTURE_MASK_SIZE] = {
+		STMFTS5_SET_FEATURE, STMFTS5_FEATURE_GESTURE };
+	u8 scan_mode_cmd[2] = { STMFTS5_SET_SCAN_MODE,
+				STMFTS5_SCAN_MODE_LOW_POWER };
+	int err;
+
+	/* stop the regular scan so that a touch cannot flood the FIFO */
+	err = stmfts5_set_scan(sdata, false);
+	if (err)
+		return err;
+
+	memcpy(gesture_cmd + 2, sdata->gesture_mask, STMFTS5_GESTURE_MASK_SIZE);
+	err = i2c_master_send(sdata->client, gesture_cmd, sizeof(gesture_cmd));
+	if (err != sizeof(gesture_cmd))
+		return err < 0 ? err : -EIO;
+
+	err = i2c_master_send(sdata->client, scan_mode_cmd,
+			      sizeof(scan_mode_cmd));
+	if (err != sizeof(scan_mode_cmd))
+		return err < 0 ? err : -EIO;
+
+	sdata->low_power = true;
+
+	return 0;
+}
+
 static int stmfts_start_scan(struct stmfts_data *sdata)
 {
 	int err;
@@ -555,6 +644,8 @@ static int stmfts_start_scan(struct stmfts_data *sdata)
 	err = sdata->ops->set_scan(sdata, true);
 	if (err)
 		return err;
+
+	sdata->low_power = false;
 
 	scoped_guard(mutex, &sdata->mutex) {
 		sdata->running = true;
@@ -906,9 +997,61 @@ static int stmfts_setup_input(struct stmfts_data *sdata)
 				   INPUT_MT_DIRECT);
 }
 
+/*
+ * The gestures detected in low power mode are reported on their own input
+ * device, so that they still reach userspace when the touchscreen input
+ * device has been closed.
+ */
+static int stmfts5_setup_gestures(struct stmfts_data *sdata)
+{
+	struct device *dev = &sdata->client->dev;
+	struct input_dev *input = NULL;
+	struct fwnode_handle *child;
+	int i, err;
+
+	for (i = 0; i < ARRAY_SIZE(stmfts5_gestures); i++) {
+		const struct stmfts5_gesture *gesture = &stmfts5_gestures[i];
+		unsigned int code;
+
+		child = device_get_named_child_node(dev, gesture->node);
+		if (!child)
+			continue;
+
+		err = fwnode_property_read_u32(child, "linux,code", &code);
+		fwnode_handle_put(child);
+		if (err)
+			return dev_err_probe(dev, err, "%s: failed to read linux,code\n",
+					     gesture->node);
+
+		if (code == KEY_RESERVED)
+			continue;
+
+		if (!input) {
+			input = devm_input_allocate_device(dev);
+			if (!input)
+				return -ENOMEM;
+
+			input->name = STMFTS_GESTURE_DEV_NAME;
+			input->id.bustype = BUS_I2C;
+		}
+
+		input_set_capability(input, EV_KEY, code);
+		sdata->gesture_code[i] = code;
+		sdata->gesture_mask[gesture->id / 8] |= BIT(gesture->id % 8);
+	}
+
+	if (!input)
+		return 0;
+
+	sdata->gesture_input = input;
+
+	return input_register_device(input);
+}
+
 static int stmfts5_setup_input(struct stmfts_data *sdata)
 {
 	struct device *dev = &sdata->client->dev;
+	int err;
 
 	sdata->mode_switch_gpio = devm_gpiod_get_optional(dev, "mode-switch",
 							  GPIOD_OUT_HIGH);
@@ -926,6 +1069,10 @@ static int stmfts5_setup_input(struct stmfts_data *sdata)
 
 	/* Enable stylus support if requested */
 	sdata->stylus_enabled = device_property_read_bool(dev, "stylus-enabled");
+
+	err = stmfts5_setup_gestures(sdata);
+	if (err)
+		return err;
 
 	return input_mt_init_slots(sdata->input, STMFTS_MAX_FINGERS,
 				   INPUT_MT_DIRECT);
@@ -1071,6 +1218,10 @@ static int stmfts_runtime_suspend(struct device *dev)
 	struct stmfts_data *sdata = dev_get_drvdata(dev);
 	int ret;
 
+	/* keep looking for the wakeup gestures instead of sleeping */
+	if (sdata->gesture_input && device_may_wakeup(dev))
+		return sdata->ops->set_low_power(sdata);
+
 	ret = i2c_smbus_write_byte(sdata->client, STMFTS_SLEEP_IN);
 	if (ret)
 		dev_warn(dev, "failed to suspend device: %d\n", ret);
@@ -1128,6 +1279,10 @@ static int stmfts_runtime_resume(struct device *dev)
 	struct stmfts_data *sdata = dev_get_drvdata(dev);
 	int err;
 
+	/* only the scan mode changed, stmfts_start_scan() puts it back */
+	if (sdata->low_power)
+		return 0;
+
 	err = sdata->ops->runtime_resume(sdata);
 	if (err)
 		dev_err(dev, "failed to resume device: %d\n", err);
@@ -1139,6 +1294,14 @@ static int stmfts_suspend(struct device *dev)
 {
 	struct stmfts_data *sdata = dev_get_drvdata(dev);
 
+	/* the IRQ stays enabled, the PM core arms it as the wake source */
+	if (sdata->gesture_input && device_may_wakeup(dev)) {
+		if (sdata->low_power)
+			return 0;
+
+		return sdata->ops->set_low_power(sdata);
+	}
+
 	stmfts_power_off(sdata);
 
 	return 0;
@@ -1148,6 +1311,16 @@ static int stmfts_resume(struct device *dev)
 {
 	struct stmfts_data *sdata = dev_get_drvdata(dev);
 	int err;
+
+	if (sdata->gesture_input && device_may_wakeup(dev)) {
+		guard(mutex)(&sdata->input->mutex);
+
+		/* stays armed until the input device is opened again */
+		if (!input_device_enabled(sdata->input))
+			return 0;
+
+		return stmfts_start_scan(sdata);
+	}
 
 	err = stmfts_power_on(sdata);
 	if (err)
@@ -1190,6 +1363,7 @@ static const struct stmfts_chip_ops stmfts5_ops = {
 	.setup_input	= stmfts5_setup_input,
 	.parse_events	= stmfts5_parse_events,
 	.set_scan	= stmfts5_set_scan,
+	.set_low_power	= stmfts5_set_low_power,
 	.runtime_resume	= stmfts5_chip_runtime_resume,
 };
 
