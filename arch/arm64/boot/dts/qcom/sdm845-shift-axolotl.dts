@@ -267,6 +267,22 @@
 			};
 		};
 	};
+
+	sbu-mux {
+		compatible = "gpio-sbu-mux";
+
+		enable-gpios = <&tlmm 43 GPIO_ACTIVE_LOW>;
+		select-gpios = <&tlmm 49 GPIO_ACTIVE_HIGH>;
+
+		mode-switch;
+		orientation-switch;
+
+		port {
+			sbu_mux_in: endpoint {
+				remote-endpoint = <&pmi8998_typec_sbu_out>;
+			};
+		};
+	};
 };
 
 &adsp_pas {
@@ -1008,6 +1024,13 @@
 				       PDO_FIXED_DATA_SWAP)>;
 		op-sink-microwatt = <15000000>;
 
+		altmodes {
+			displayport {
+				svid = /bits/ 16 <0xff01>;
+				vdo = <0x00001c46>;
+			};
+		};
+
 		ports {
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -1023,6 +1046,13 @@
 				reg = <1>;
 				pmi8998_typec_mux_in: endpoint {
 					remote-endpoint = <&usb_1_qmpphy_out>;
+				};
+			};
+
+			port@2 {
+				reg = <2>;
+				pmi8998_typec_sbu_out: endpoint {
+					remote-endpoint = <&sbu_mux_in>;
 				};
 			};
 		};
@@ -1475,6 +1505,16 @@
 
 	vdda-phy-supply = <&vreg_l1a_0p875>;
 	vdda-pll-supply = <&vreg_l26a_1p2>;
+
+	mode-switch;
+};
+
+&mdss_dp {
+	status = "okay";
+};
+
+&mdss_dp_out {
+	data-lanes = <0 1>;
 };
 
 &usb_1_qmpphy_out {
